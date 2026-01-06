@@ -6,7 +6,6 @@ export enum CellColor {
     NONE = "NONE"
 }
 
-// Default States for initial loading / logic references
 export enum OpportunityState {
     EVALUACION = "Evaluación",
     ELABORACION = "Elaboración",
@@ -17,8 +16,6 @@ export enum OpportunityState {
     CAPACITY_GANADA = "Capacity Ganada",
     CAPACITY_DESESTIMADO = "Capacity Desestimado"
 }
-
-// --- ABMC ENTITIES ---
 
 export interface Account {
     id: number;
@@ -35,73 +32,70 @@ export interface OpportunityStatus {
 
 export interface DocumentType {
     id: number;
-    name: string; // e.g. Reunión, Documento
+    name: string;
 }
 
 export interface OpportunityType {
     id: number;
-    name: string; // e.g. RPA, Desa Web, Staff Augmentation
+    name: string;
 }
 
 export interface JobRole {
     id: number;
-    name: string; // e.g. DC, Analista de Negocios, Gerente Comercial
+    name: string;
 }
 
 export interface Employee {
     id: number;
     fullName: string;
-    role: string; // Linked to JobRole name
+    role: string;
     isActive: boolean;
 }
 
-// --- HISTORY ENTITY ---
 export interface ObservationItem {
-    date: string; // ISO String YYYY-MM-DD
+    date: string;
     text: string;
 }
-
-// --- MAIN ENTITY ---
 
 export interface Opportunity {
     id: number;
     percentage: number;
     color: CellColor;
     
-    manager: string; // Storing Name for display simplicity in this migration phase
+    manager: string; 
     account: string; 
     
     name: string;
-    state: string; // Can be one of OpportunityState or a custom one
+    state: string; 
     reason?: string; 
     
-    // Roles Specific Fields (Replaces presalesTeam)
-    responsibleDC?: string;      // Role: 'DC'
-    responsibleBusiness?: string; // Role: 'Analista de Negocios'
-    responsibleTech?: string;    // Role: 'Responsable Técnico'
+    responsibleDC?: string;      
+    responsibleBusiness?: string; 
+    responsibleTech?: string;    
     
-    documentType?: string; // Selected from DocumentType (Physical format)
-    opportunityType?: string; // Selected from OpportunityType (Business Logic: RPA, Web, etc.)
+    documentType?: string; 
+    opportunityType?: string; 
     
-    // Dates
     startDate: string; 
     engagementDate?: string; 
     scopeDate?: string; 
     coeDate?: string; 
-    deliveryDate?: string; // Fecha Compromiso de Entrega
-    realDeliveryDate?: string; // Fecha Real de Entrega
+    deliveryDate?: string; 
+    realDeliveryDate?: string; 
     
-    observations?: string; // Current / Latest observation text
-    observationHistory?: ObservationItem[]; // Full history
+    observations?: string; 
+    observationHistory?: ObservationItem[]; 
     
-    // Logic
     kRedIndex: number; 
     orderIndex: number; 
     
-    // New Fields
-    hours?: number;        // Horas estimadas (Entero)
-    term?: number;         // Plazo estimado en días/meses (Entero)
-    workPlanLink?: string; // Enlace a Plan de Trabajo (Texto libre)
+    hours?: number;        
+    term?: number;         
+    workPlanLink?: string; 
+
+    // Campos solicitados
+    isAIProposal?: boolean;
+    isPrototypeProposal?: boolean;
 }
 
 export interface SortConfig {
