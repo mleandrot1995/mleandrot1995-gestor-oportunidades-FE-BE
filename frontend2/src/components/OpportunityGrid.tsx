@@ -1,0 +1,400 @@
+import React, { useState } from 'react';
+import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Motive } from '../types/types';
+import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search } from 'lucide-react';
+import * as api from '../api';
+
+interface Props {
+    data: Opportunity[];
+    onOpenDetail: (opp: Opportunity) => void;
+    onArchive: (opp: Opportunity) => void;
+    onUnarchive: (opp: Opportunity) => void;
+    onRestore: (opp: Opportunity) => void;
+    onDelete: (id: number) => void;
+    onUpdate: () => void;
+    isHistoryView: boolean;
+    isTrashView: boolean;
+    accounts: Account[];
+    employees: Employee[];
+    statuses: OpportunityStatus[];
+    docTypes: DocumentType[];
+    oppTypes: OpportunityType[];
+    motives: Motive[];
+}
+
+const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0];
+    } catch { return ''; }
+};
+
+const dateDiffInDays = (d1?: string, d2?: string) => {
+    if (!d1 || !d2) return '-';
+    const date1 = new Date(d1).getTime();
+    const date2 = new Date(d2).getTime();
+    if (isNaN(date1) || isNaN(date2)) return '-';
+    const diff = Math.floor((date2 - date1) / (1000 * 60 * 60 * 24));
+    return diff >= 0 ? diff : '-';
+}
+
+const OpportunityGrid: React.FC<Props> = ({ 
+    data, onOpenDetail, onArchive, onUnarchive, onRestore, onDelete, onUpdate, 
+    isHistoryView, isTrashView, accounts, employees, statuses, motives
+}) => {
+    
+    const isReadOnlyView = isHistoryView || isTrashView;
+    const [focusedDate, setFocusedDate] = useState<string | null>(null);
+
+    const handleSaveField = async (oppId: number, field: keyof Opportunity, value: any) => {
+        if (isReadOnlyView) return;
+        try {
+            let cleanedValue = value;
+            if (value === "" || value === undefined) cleanedValue = null;
+            if (typeof value === 'number' && isNaN(value)) cleanedValue = null;
+
+            await api.updateOpportunity(oppId, { [field]: cleanedValue });
+            onUpdate();
+        } catch (e) { 
+            console.error('Error updating field:', e);
+        }
+    };
+
+    const validateSemaforo = (percent: number, color: string): boolean => {
+        if (color === 'RED' && percent !== 0) return false;
+        if (percent === 0 && color !== 'RED' && color !== 'NONE') return false;
+        if (color === 'YELLOW' && (percent < 50 || percent > 69)) return false;
+        if (color === 'GREEN' && (percent < 70 || percent > 100)) return false;
+        if (color === 'NONE' && percent > 49) return false;
+        return true;
+    };
+
+    const getRangeSuggestion = (color: string): string => {
+        switch (color) {
+            case 'RED': return 'Debe ser 0%';
+            case 'YELLOW': return 'Rango: 50% - 69%';
+            case 'GREEN': return 'Rango: 70% - 100%';
+            case 'NONE': return 'Rango: 0% - 49%';
+            default: return '';
+        }
+    };
+
+    const handleSavePercentage = async (oppId: number, percent: number, color: string) => {
+        if (isReadOnlyView) return;
+        
+        if (!validateSemaforo(percent, color)) {
+            alert(`Error de regla - Combinación inválida:\n- Rojo: 0%\n- Amarillo: 50-69%\n- Verde: 70-100%\n- Sin color: 0-49%`);
+            return;
+        }
+
+        try {
+            await api.updateOpportunity(oppId, { percentage: percent, color_code: color });
+            onUpdate();
+        } catch (e) { console.error(e); }
+    };
+
+    const handleObservationUpdate = async (oppId: number, text: string, oldText?: string) => {
+        if (isReadOnlyView || text === oldText) return;
+        try {
+            await api.createObservation(oppId, text);
+            onUpdate();
+        } catch (e) { console.error(e); }
+    }
+
+    const getSemaforoStyle = (colorCode: string) => {
+        switch (colorCode) {
+            case 'GREEN': return 'bg-[#22c55e] text-black';
+            case 'YELLOW': return 'bg-[#facc15] text-black';
+            case 'RED': return 'bg-[#ef4444] text-white';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    const getStatusStyle = (statusName?: string) => {
+        const name = (statusName || '').toUpperCase();
+        // Azul claro para PROGRESO, ELABORACIÓN, EVALUACIÓN
+        if (name.includes('PROGRESO') || name.includes('ELABORACIÓN') || name.includes('EVALUACIÓN')) {
+            return "bg-blue-100 text-blue-700 border-blue-200";
+        }
+        // Verde para estados positivos definitivos
+        if (name.includes('GANADA')) {
+            return "bg-green-100 text-green-700 border-green-200";
+        }
+        // Rojo para estados negativos
+        if (name.includes('PERDIDA') || name.includes('DESESTIMADA')) {
+            return "bg-red-100 text-red-700 border-red-200";
+        }
+        // Amarillo para esperas
+        if (name.includes('ESPERANDO') || name.includes('STAND-BY')) {
+            return "bg-yellow-100 text-yellow-700 border-yellow-200";
+        }
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    };
+
+    // Increased contrast in colors (text-gray-800, border-gray-300) and headers centered
+    const headerClass = "px-2 py-3 text-center text-[10px] font-black text-gray-800 uppercase tracking-wider border-b border-r border-gray-300 bg-gray-100";
+    const cellClass = "px-2 py-3 border-b border-r border-gray-300 align-middle text-gray-900 font-medium";
+    
+    const inlineInput = "w-full bg-transparent hover:bg-gray-100/50 px-1 py-0.5 rounded cursor-pointer border-none font-inherit text-inherit outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all";
+    const inlineDate = "bg-transparent border-none text-[10px] font-bold p-0 cursor-pointer hover:bg-gray-100 rounded px-1 w-full text-gray-800";
+
+    const filteredDC = employees.filter(e => e.role_name === 'DC' && e.is_active);
+    const filteredNeg = employees.filter(e => e.role_name === 'Analista de negocios' && e.is_active);
+    const filteredTec = employees.filter(e => e.role_name === 'Responsable técnico' && e.is_active);
+    const filteredManagers = employees.filter(e => e.role_name === 'Gerente Comercial' && e.is_active);
+
+    const renderDateInput = (oppId: number, field: keyof Opportunity, value?: string, colorClass: string = "text-gray-800") => {
+        const id = `${oppId}-${field}`;
+        const isFocused = focusedDate === id;
+        const hasValue = !!value;
+
+        return (
+            <input 
+                type={(isFocused || hasValue) ? "date" : "text"}
+                className={`${inlineDate} ${colorClass}`}
+                value={hasValue ? formatDate(value) : ''}
+                onFocus={() => setFocusedDate(id)}
+                onBlur={() => setFocusedDate(null)}
+                onChange={e => handleSaveField(oppId, field, e.target.value)}
+                disabled={isReadOnlyView}
+                placeholder={isFocused ? "dd/mm/aaaa" : ""}
+            />
+        );
+    }
+
+    const handleOpenLink = (link?: string) => {
+        if (!link) return;
+        const url = link.startsWith('http') ? link : `https://${link}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    const actionBtnClass = "flex items-center gap-1.5 px-2 py-1 rounded transition-all text-[9px] font-bold uppercase tracking-tight w-full";
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-x-auto">
+            <table className="w-full border-collapse min-w-[1500px]">
+                <thead>
+                    <tr>
+                        <th className={`${headerClass} w-10`}>#</th>
+                        <th className={`${headerClass} w-20`}>%</th>
+                        <th className={`${headerClass} w-44`}>Cuenta</th>
+                        <th className={`${headerClass} w-60`}>Oportunidad</th>
+                        <th className={`${headerClass} w-52`}>Observaciones</th>
+                        <th className={`${headerClass} w-40`}>Estado</th>
+                        <th className={`${headerClass} w-64`}>Cronograma</th>
+                        <th className={`${headerClass} w-24`}>Días</th>
+                        <th className={`${headerClass} w-36`}>Proyecto</th>
+                        <th className={`${headerClass} w-48`}>Equipo</th>
+                        <th className={`${headerClass} w-32 border-r-0`}>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white">
+                    {data.map(opp => (
+                        <tr key={opp.id} className="hover:bg-gray-50/30 transition-colors group">
+                            <td className="px-1 py-3 text-center text-gray-500 text-[10px] font-bold border-b border-r border-gray-300">{opp.id}</td>
+                            
+                            <td className={`p-0 relative w-20 align-stretch h-full border-b border-r border-gray-300 transition-colors ${getSemaforoStyle(opp.color_code)}`}>
+                                <div className="flex items-center justify-center w-full h-full min-h-[80px] relative group/percent">
+                                    <span className="relative z-10 font-black text-[14px]">{opp.percentage}%</span>
+                                    
+                                    {!isReadOnlyView && (
+                                        <div className="absolute inset-0 opacity-0 group-hover/percent:opacity-100 bg-white/95 flex flex-col p-2 gap-1.5 transition-opacity z-20 shadow-lg justify-center border text-gray-800">
+                                            <div className="flex flex-col gap-0.5">
+                                                <label className="text-[8px] font-black text-gray-400 uppercase">Semáforo</label>
+                                                <select 
+                                                    className="w-full text-[10px] font-bold border rounded bg-white p-1 text-gray-800" 
+                                                    value={opp.color_code} 
+                                                    onChange={e => handleSavePercentage(opp.id, opp.percentage, e.target.value)}
+                                                >
+                                                    <option value="GREEN" className="bg-green-100 text-green-700">Verde (Óptimo)</option>
+                                                    <option value="YELLOW" className="bg-yellow-100 text-yellow-700">Amarillo (Alerta)</option>
+                                                    <option value="RED" className="bg-red-100 text-red-700">Rojo (Crítico)</option>
+                                                    <option value="NONE" className="bg-gray-100 text-gray-700">Sin definir</option>
+                                                </select>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5">
+                                                <label className="text-[8px] font-black text-gray-400 uppercase">Porcentaje</label>
+                                                <input 
+                                                    type="number" 
+                                                    className={`w-full text-center text-[11px] font-bold border rounded p-1 bg-white text-gray-800 ${!validateSemaforo(opp.percentage, opp.color_code) ? 'border-red-500' : ''}`} 
+                                                    defaultValue={opp.percentage} 
+                                                    onBlur={e => handleSavePercentage(opp.id, parseInt(e.target.value) || 0, opp.color_code)} 
+                                                />
+                                                <p className="text-[7px] text-blue-500 font-bold italic leading-tight text-center">{getRangeSuggestion(opp.color_code)}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </td>
+                            
+                            <td className={`${cellClass} font-black`}>
+                                <select className={`${inlineInput} text-[11px] font-bold`} value={opp.account_id} onChange={e => handleSaveField(opp.id, 'account_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                </select>
+                            </td>
+                            
+                            <td className={`${cellClass}`}>
+                                <div className="flex flex-col gap-1">
+                                    <textarea 
+                                        className={`${inlineInput} font-black uppercase text-[11px] resize-none h-12 overflow-y-auto leading-tight`} 
+                                        defaultValue={opp.name} 
+                                        onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
+                                        disabled={isReadOnlyView} 
+                                    />
+                                    <div className="flex gap-2 px-1">
+                                        <label className="text-[8px] font-black text-purple-600 flex items-center gap-1 cursor-pointer"><input type="checkbox" className="w-2.5 h-2.5" checked={opp.has_ia_proposal} onChange={e => handleSaveField(opp.id, 'has_ia_proposal', e.target.checked)} disabled={isReadOnlyView} /> IA</label>
+                                        <label className="text-[8px] font-black text-blue-600 flex items-center gap-1 cursor-pointer"><input type="checkbox" className="w-2.5 h-2.5" checked={opp.has_prototype} onChange={e => handleSaveField(opp.id, 'has_prototype', e.target.checked)} disabled={isReadOnlyView} /> PROTO</label>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td className={`${cellClass} max-w-xs`}>
+                                <textarea className={`${inlineInput} italic text-[10px] leading-tight resize-none h-16 font-medium text-gray-700`} defaultValue={opp.last_observation || ''} onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} disabled={isReadOnlyView} />
+                            </td>
+                            
+                            <td className={`${cellClass} text-center`}>
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
+                                        <select className={`${inlineInput} text-center text-[10px] font-black uppercase !bg-transparent !text-inherit`} value={opp.status_id} onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                            {statuses.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
+                                        </select>
+                                    </div>
+                                    <select className={`${inlineInput} text-center text-[9px] italic font-bold text-gray-500`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
+                                        <option value="">- Motivo -</option>
+                                        {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                    </select>
+                                    <div className="flex items-center justify-center gap-1">
+                                        <span className="text-[8px] font-black text-red-600 uppercase">K-R:</span>
+                                        <input type="number" className="w-8 text-[9px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td className={`${cellClass} text-[10px]`}>
+                                <div className="grid grid-cols-[80px,1fr] gap-x-1 gap-y-1">
+                                    <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Inicio:</span> 
+                                    {renderDateInput(opp.id, 'start_date', opp.start_date)}
+                                    
+                                    <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1 text-nowrap">Entendim.:</span> 
+                                    {renderDateInput(opp.id, 'understanding_date', opp.understanding_date)}
+                                    
+                                    <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Alcance:</span> 
+                                    {renderDateInput(opp.id, 'scope_date', opp.scope_date)}
+                                    
+                                    <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">COE:</span> 
+                                    {renderDateInput(opp.id, 'coe_date', opp.coe_date)}
+                                    
+                                    <span className="font-black text-blue-600 uppercase text-[9px] text-right pr-1 text-nowrap">Entrega Gte:</span> 
+                                    {renderDateInput(opp.id, 'delivery_date', opp.delivery_date, "text-blue-700")}
+                                    
+                                    <span className="font-black text-green-600 uppercase text-[9px] text-right pr-1">Real:</span> 
+                                    {renderDateInput(opp.id, 'real_delivery_date', opp.real_delivery_date, "text-green-700")}
+                                </div>
+                            </td>
+                            
+                            <td className={`${cellClass} text-center`}>
+                                <div className="flex flex-col gap-1 items-center">
+                                    <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[8px] uppercase">COE:</span><span className="font-black text-gray-900 text-[11px]">{dateDiffInDays(opp.start_date, opp.coe_date)}</span></div>
+                                    <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[8px] uppercase">ENT:</span><span className="font-black text-gray-900 text-[11px]">{dateDiffInDays(opp.start_date, opp.delivery_date)}</span></div>
+                                    <div className="mt-1 bg-blue-50/50 px-2 py-1 rounded border border-blue-200 flex flex-col items-center">
+                                        <span className="text-[7px] font-black text-blue-500 uppercase leading-none">T. GEN.</span>
+                                        <span className="font-black text-blue-700 text-[10px]">{dateDiffInDays(opp.scope_date, opp.real_delivery_date)}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td className={`${cellClass}`}>
+                                <div className="flex flex-col gap-1 items-center">
+                                    <div className="flex items-center gap-2 text-gray-900">
+                                        <Clock size={14} className="text-gray-400" />
+                                        <span className="text-[11px] font-bold">
+                                            {opp.estimated_hours && opp.estimated_hours > 0 ? `${opp.estimated_hours} hs` : '- hs'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-gray-900">
+                                        <Calendar size={14} className="text-gray-400" />
+                                        <span className="text-[11px] font-bold">
+                                            {opp.estimated_term_months && opp.estimated_term_months > 0 ? `${opp.estimated_term_months} meses` : '- meses'}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleOpenLink(opp.work_plan_link)}
+                                        className={`mt-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md border font-black text-[9px] uppercase tracking-widest shadow-sm transition-all ${opp.work_plan_link ? 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50' : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'}`}
+                                    >
+                                        <Link size={12}/> PLAN
+                                    </button>
+                                </div>
+                            </td>
+                            
+                            <td className={`${cellClass}`}>
+                                <div className="grid grid-cols-[30px,1fr] gap-x-1 gap-y-1 text-[10px]">
+                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">Gte:</span> 
+                                    <select className={inlineInput} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+                                    
+                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">DC:</span> 
+                                    <select className={inlineInput} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+
+                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">Neg:</span> 
+                                    <select className={inlineInput} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+
+                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">Tec:</span> 
+                                    <select className={inlineInput} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+                                </div>
+                            </td>
+                            
+                            <td className="px-2 py-3 text-center align-middle border-b border-gray-300">
+                                <div className="flex flex-col gap-1 items-center">
+                                    {isTrashView ? (
+                                        <div className="w-full flex flex-col gap-1">
+                                            <button onClick={() => onRestore(opp)} className={`${actionBtnClass} text-green-600 hover:bg-green-50 shadow-sm border border-green-100`}>
+                                                <RotateCcw size={14}/> <span>Restaurar</span>
+                                            </button>
+                                            <button onClick={() => onDelete(opp.id)} className={`${actionBtnClass} text-red-600 hover:bg-red-50 shadow-sm border border-red-100`}>
+                                                <Trash2 size={14}/> <span>Eliminar</span>
+                                            </button>
+                                        </div>
+                                    ) : isHistoryView ? (
+                                        <div className="w-full flex flex-col gap-1">
+                                            <button onClick={() => onUnarchive(opp)} className={`${actionBtnClass} text-blue-600 hover:bg-blue-50 shadow-sm border border-blue-100`}>
+                                                <RotateCcw size={14}/> <span>Activar</span>
+                                            </button>
+                                            <button onClick={() => onOpenDetail(opp)} className={`${actionBtnClass} text-blue-700 hover:bg-blue-50 shadow-sm border border-blue-100`}>
+                                                <Search size={14}/> <span>Ver Detalle</span>
+                                            </button>
+                                            <button onClick={() => onDelete(opp.id)} className={`${actionBtnClass} text-red-600 hover:bg-red-50 shadow-sm border border-red-100`}>
+                                                <Trash2 size={14}/> <span>Borrar</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="w-full flex flex-col gap-1">
+                                            <button onClick={() => onOpenDetail(opp)} className={`${actionBtnClass} text-blue-600 hover:bg-blue-50 shadow-sm border border-blue-100`}>
+                                                <Edit2 size={14}/> <span>Editar</span>
+                                            </button>
+                                            <button onClick={() => onArchive(opp)} className={`${actionBtnClass} text-orange-500 hover:bg-orange-50 shadow-sm border border-orange-100`}>
+                                                <Archive size={14}/> <span>Archivar</span>
+                                            </button>
+                                            <button onClick={() => onDelete(opp.id)} className={`${actionBtnClass} text-red-600 hover:bg-red-50 shadow-sm border border-red-100`}>
+                                                <Trash2 size={14}/> <span>Borrar</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+export default OpportunityGrid;
