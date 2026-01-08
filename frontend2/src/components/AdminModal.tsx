@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { X, Plus, Trash2, Edit2, RotateCcw } from 'lucide-react';
 import { Account, OpportunityStatus, DocumentType, OpportunityType, Employee, JobRole, Motive } from '../types/types';
 import * as api from '../api';
 
@@ -137,8 +137,17 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <div className="flex-1 overflow-y-auto p-5 space-y-5">
                     
                     {/* Nuevo Registro Section */}
-                    <div className="border rounded-lg p-4 bg-white shadow-sm border-gray-100">
-                        <h3 className="text-[#333] font-black text-[13px] mb-3 uppercase tracking-widest">Nuevo Registro</h3>
+                    <div className="border rounded-lg p-4 bg-white shadow-sm border-gray-100 relative">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-[#333] font-black text-[13px] uppercase tracking-widest">
+                                {editingId ? 'Editar Registro' : 'Nuevo Registro'}
+                            </h3>
+                            {editingId && (
+                                <button onClick={resetForm} className="text-red-500 text-[10px] font-bold flex items-center gap-1 hover:underline uppercase">
+                                    <RotateCcw size={10}/> Cancelar Edición
+                                </button>
+                            )}
+                        </div>
                         <div className="space-y-3">
                             {activeSubTab === 'accounts' ? (
                                 <>
@@ -174,9 +183,17 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                 </div>
                             )}
                             
-                            <button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded text-[11px] uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2">
-                                <Plus size={16}/> {editingId ? 'Guardar Cambios' : `Agregar ${activeSubTab === 'accounts' ? 'Cuenta' : 'Registro'}`}
-                            </button>
+                            <div className="flex gap-2">
+                                {editingId && (
+                                    <button onClick={resetForm} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-600 font-black py-2 rounded text-[11px] uppercase tracking-widest transition-all">
+                                        Cancelar
+                                    </button>
+                                )}
+                                <button onClick={handleSave} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded text-[11px] uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2">
+                                    {editingId ? <Edit2 size={14}/> : <Plus size={16}/>} 
+                                    {editingId ? 'Actualizar' : `Agregar ${activeSubTab === 'accounts' ? 'Cuenta' : 'Registro'}`}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -199,12 +216,16 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                   activeSubTab === 'oppTypes' ? oppTypes :
                                   activeSubTab === 'roles' ? roles : 
                                   activeSubTab === 'motives' ? motives : employees).map((item: any) => (
-                                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={item.id} className={`hover:bg-gray-50 transition-colors ${editingId === item.id ? 'bg-blue-50' : ''}`}>
                                         <td className="px-3 py-2">
                                             <div className="font-bold text-gray-800">{item.name || item.full_name}</div>
-                                            {item.contact_email && <div className="text-[10px] text-gray-400 font-medium">{item.contact_email}</div>}
                                         </td>
-                                        {activeSubTab === 'accounts' && <td className="px-3 py-2 text-gray-600">{item.contact_name || '-'}</td>}
+                                        {activeSubTab === 'accounts' && (
+                                            <td className="px-3 py-2">
+                                                <div className="font-bold text-gray-700">{item.contact_name || '-'}</div>
+                                                {item.contact_email && <div className="text-[10px] text-gray-400 font-medium">{item.contact_email}</div>}
+                                            </td>
+                                        )}
                                         {activeSubTab === 'employees' && <td className="px-3 py-2 text-gray-600">{item.role_name || '-'}</td>}
                                         {(activeSubTab === 'accounts' || activeSubTab === 'employees') && (
                                             <td className="px-3 py-2 text-center">
@@ -215,7 +236,7 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                         )}
                                         <td className="px-3 py-2 text-right">
                                             <div className="flex justify-end gap-2">
-                                                <button onClick={() => handleEdit(item)} className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-all"><Edit2 size={14}/></button>
+                                                <button onClick={() => handleEdit(item)} className={`p-1 rounded transition-all ${editingId === item.id ? 'text-blue-700 bg-blue-100' : 'text-blue-500 hover:bg-blue-50'}`}><Edit2 size={14}/></button>
                                                 <button onClick={() => handleDelete(item.id)} className="p-1 text-red-400 hover:bg-red-50 rounded transition-all"><Trash2 size={14}/></button>
                                             </div>
                                         </td>

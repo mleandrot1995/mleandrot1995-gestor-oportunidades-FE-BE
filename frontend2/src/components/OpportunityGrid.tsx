@@ -30,13 +30,29 @@ const formatDate = (dateString?: string) => {
     } catch { return ''; }
 };
 
-const dateDiffInDays = (d1?: string, d2?: string) => {
+// Función para calcular días hábiles (lunes a viernes) entre dos fechas
+const getBusinessDays = (d1?: string, d2?: string) => {
     if (!d1 || !d2) return '-';
-    const date1 = new Date(d1).getTime();
-    const date2 = new Date(d2).getTime();
-    if (isNaN(date1) || isNaN(date2)) return '-';
-    const diff = Math.floor((date2 - date1) / (1000 * 60 * 60 * 24));
-    return diff >= 0 ? diff : '-';
+    
+    let startDate = new Date(d1);
+    let endDate = new Date(d2);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '-';
+    if (startDate > endDate) return '-';
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    let businessDays = 0;
+    let curDate = new Date(startDate.getTime());
+    while (curDate < endDate) {
+        curDate.setDate(curDate.getDate() + 1);
+        const day = curDate.getDay();
+        if (day !== 0 && day !== 6) {
+            businessDays++;
+        }
+    }
+    return businessDays;
 }
 
 const OpportunityGrid: React.FC<Props> = ({ 
@@ -94,6 +110,39 @@ const OpportunityGrid: React.FC<Props> = ({
         } catch (e) { console.error(e); }
     };
 
+    const handleColorChange = async (oppId: number, newColor: string, currentPercent: number) => {
+        if (isReadOnlyView) return;
+
+        if (newColor === 'RED') {
+            try {
+                await api.updateOpportunity(oppId, { percentage: 0, color_code: newColor });
+                onUpdate();
+                return;
+            } catch (e) { console.error(e); return; }
+        }
+
+        if (!validateSemaforo(currentPercent, newColor)) {
+            const range = getRangeSuggestion(newColor);
+            let newPercentStr = prompt(`El porcentaje actual (${currentPercent}%) no es válido para el color ${newColor}.\n${range}.\n\nIngrese el nuevo porcentaje:`);
+            
+            if (newPercentStr === null) return;
+            
+            const newPercent = parseInt(newPercentStr);
+            
+            if (isNaN(newPercent) || !validateSemaforo(newPercent, newColor)) {
+                alert("Porcentaje inválido o fuera de rango. No se guardaron los cambios.");
+                return;
+            }
+
+            try {
+                await api.updateOpportunity(oppId, { percentage: newPercent, color_code: newColor });
+                onUpdate();
+            } catch (e) { console.error(e); }
+        } else {
+            handleSavePercentage(oppId, currentPercent, newColor);
+        }
+    };
+
     const handleObservationUpdate = async (oppId: number, text: string, oldText?: string) => {
         if (isReadOnlyView || text === oldText) return;
         try {
@@ -113,33 +162,28 @@ const OpportunityGrid: React.FC<Props> = ({
 
     const getStatusStyle = (statusName?: string) => {
         const name = (statusName || '').toUpperCase();
-        // Azul claro para PROGRESO, ELABORACIÓN, EVALUACIÓN
         if (name.includes('PROGRESO') || name.includes('ELABORACIÓN') || name.includes('EVALUACIÓN')) {
             return "bg-blue-100 text-blue-700 border-blue-200";
         }
-        // Verde para estados positivos definitivos
         if (name.includes('GANADA')) {
             return "bg-green-100 text-green-700 border-green-200";
         }
-        // Rojo para estados negativos
         if (name.includes('PERDIDA') || name.includes('DESESTIMADA')) {
             return "bg-red-100 text-red-700 border-red-200";
         }
-        // Amarillo para esperas
         if (name.includes('ESPERANDO') || name.includes('STAND-BY')) {
             return "bg-yellow-100 text-yellow-700 border-yellow-200";
         }
         return "bg-gray-100 text-gray-700 border-gray-200";
     };
 
-    // Increased contrast in colors (text-gray-800, border-gray-300) and headers centered
     const headerClass = "px-2 py-3 text-center text-[10px] font-black text-gray-800 uppercase tracking-wider border-b border-r border-gray-300 bg-gray-100";
     const cellClass = "px-2 py-3 border-b border-r border-gray-300 align-middle text-gray-900 font-medium";
     
     const inlineInput = "w-full bg-transparent hover:bg-gray-100/50 px-1 py-0.5 rounded cursor-pointer border-none font-inherit text-inherit outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all";
     const inlineDate = "bg-transparent border-none text-[10px] font-bold p-0 cursor-pointer hover:bg-gray-100 rounded px-1 w-full text-gray-800";
 
-    const filteredDC = employees.filter(e => e.role_name === 'DC' && e.is_active);
+    const filteredDC = employees.filter(e => e.role_name === 'Aprobador' && e.is_active);
     const filteredNeg = employees.filter(e => e.role_name === 'Analista de negocios' && e.is_active);
     const filteredTec = employees.filter(e => e.role_name === 'Responsable técnico' && e.is_active);
     const filteredManagers = employees.filter(e => e.role_name === 'Gerente Comercial' && e.is_active);
@@ -180,12 +224,12 @@ const OpportunityGrid: React.FC<Props> = ({
                         <th className={`${headerClass} w-20`}>%</th>
                         <th className={`${headerClass} w-44`}>Cuenta</th>
                         <th className={`${headerClass} w-60`}>Oportunidad</th>
-                        <th className={`${headerClass} w-52`}>Observaciones</th>
+                        <th className={`${headerClass} w-40`}>Observaciones</th>
                         <th className={`${headerClass} w-40`}>Estado</th>
-                        <th className={`${headerClass} w-64`}>Cronograma</th>
+                        <th className={`${headerClass} w-44`}>Cronograma</th>
+                        <th className={`${headerClass} w-48`}>Equipo</th>
                         <th className={`${headerClass} w-24`}>Días</th>
                         <th className={`${headerClass} w-36`}>Proyecto</th>
-                        <th className={`${headerClass} w-48`}>Equipo</th>
                         <th className={`${headerClass} w-32 border-r-0`}>Acciones</th>
                     </tr>
                 </thead>
@@ -199,13 +243,13 @@ const OpportunityGrid: React.FC<Props> = ({
                                     <span className="relative z-10 font-black text-[14px]">{opp.percentage}%</span>
                                     
                                     {!isReadOnlyView && (
-                                        <div className="absolute inset-0 opacity-0 group-hover/percent:opacity-100 bg-white/95 flex flex-col p-2 gap-1.5 transition-opacity z-20 shadow-lg justify-center border text-gray-800">
+                                        <div className="absolute inset-0 opacity-0 group-hover/percent:opacity-100 bg-white flex flex-col p-2 gap-1.5 transition-opacity z-20 shadow-lg justify-center border text-gray-800">
                                             <div className="flex flex-col gap-0.5">
                                                 <label className="text-[8px] font-black text-gray-400 uppercase">Semáforo</label>
                                                 <select 
                                                     className="w-full text-[10px] font-bold border rounded bg-white p-1 text-gray-800" 
                                                     value={opp.color_code} 
-                                                    onChange={e => handleSavePercentage(opp.id, opp.percentage, e.target.value)}
+                                                    onChange={e => handleColorChange(opp.id, e.target.value, opp.percentage)}
                                                 >
                                                     <option value="GREEN" className="bg-green-100 text-green-700">Verde (Óptimo)</option>
                                                     <option value="YELLOW" className="bg-yellow-100 text-yellow-700">Amarillo (Alerta)</option>
@@ -219,6 +263,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                                     type="number" 
                                                     className={`w-full text-center text-[11px] font-bold border rounded p-1 bg-white text-gray-800 ${!validateSemaforo(opp.percentage, opp.color_code) ? 'border-red-500' : ''}`} 
                                                     defaultValue={opp.percentage} 
+                                                    key={opp.percentage}
                                                     onBlur={e => handleSavePercentage(opp.id, parseInt(e.target.value) || 0, opp.color_code)} 
                                                 />
                                                 <p className="text-[7px] text-blue-500 font-bold italic leading-tight text-center">{getRangeSuggestion(opp.color_code)}</p>
@@ -250,7 +295,7 @@ const OpportunityGrid: React.FC<Props> = ({
                             </td>
                             
                             <td className={`${cellClass} max-w-xs`}>
-                                <textarea className={`${inlineInput} italic text-[10px] leading-tight resize-none h-16 font-medium text-gray-700`} defaultValue={opp.last_observation || ''} onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} disabled={isReadOnlyView} />
+                                <textarea className={`${inlineInput} italic text-[12px] leading-tight resize-none h-16 font-medium text-gray-700`} defaultValue={opp.last_observation || ''} onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} disabled={isReadOnlyView} />
                             </td>
                             
                             <td className={`${cellClass} text-center`}>
@@ -292,14 +337,38 @@ const OpportunityGrid: React.FC<Props> = ({
                                     {renderDateInput(opp.id, 'real_delivery_date', opp.real_delivery_date, "text-green-700")}
                                 </div>
                             </td>
+
+                            <td className={`${cellClass}`}>
+                                <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
+                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Gte:</span> 
+                                    <select className={inlineInput} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+                                    
+                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1 text-nowrap">Aprob:</span> 
+                                    <select className={inlineInput} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+
+                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Neg:</span> 
+                                    <select className={inlineInput} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+
+                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Tec:</span> 
+                                    <select className={inlineInput} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                    </select>
+                                </div>
+                            </td>
                             
                             <td className={`${cellClass} text-center`}>
                                 <div className="flex flex-col gap-1 items-center">
-                                    <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[8px] uppercase">COE:</span><span className="font-black text-gray-900 text-[11px]">{dateDiffInDays(opp.start_date, opp.coe_date)}</span></div>
-                                    <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[8px] uppercase">ENT:</span><span className="font-black text-gray-900 text-[11px]">{dateDiffInDays(opp.start_date, opp.delivery_date)}</span></div>
+                                    <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Inicio:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.start_date, opp.understanding_date)}</span></div>
+                                    <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Entendim.:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.understanding_date, opp.scope_date)}</span></div>
                                     <div className="mt-1 bg-blue-50/50 px-2 py-1 rounded border border-blue-200 flex flex-col items-center">
-                                        <span className="text-[7px] font-black text-blue-500 uppercase leading-none">T. GEN.</span>
-                                        <span className="font-black text-blue-700 text-[10px]">{dateDiffInDays(opp.scope_date, opp.real_delivery_date)}</span>
+                                        <span className="text-[8px] font-black text-blue-500 uppercase leading-none text-nowrap">Elaboración</span>
+                                        <span className="font-black text-blue-700 text-[12px]">{getBusinessDays(opp.scope_date, opp.real_delivery_date)}</span>
                                     </div>
                                 </div>
                             </td>
@@ -308,13 +377,13 @@ const OpportunityGrid: React.FC<Props> = ({
                                 <div className="flex flex-col gap-1 items-center">
                                     <div className="flex items-center gap-2 text-gray-900">
                                         <Clock size={14} className="text-gray-400" />
-                                        <span className="text-[11px] font-bold">
+                                        <span className="text-[13px] font-bold">
                                             {opp.estimated_hours && opp.estimated_hours > 0 ? `${opp.estimated_hours} hs` : '- hs'}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-gray-900">
                                         <Calendar size={14} className="text-gray-400" />
-                                        <span className="text-[11px] font-bold">
+                                        <span className="text-[13px] font-bold">
                                             {opp.estimated_term_months && opp.estimated_term_months > 0 ? `${opp.estimated_term_months} meses` : '- meses'}
                                         </span>
                                     </div>
@@ -324,30 +393,6 @@ const OpportunityGrid: React.FC<Props> = ({
                                     >
                                         <Link size={12}/> PLAN
                                     </button>
-                                </div>
-                            </td>
-                            
-                            <td className={`${cellClass}`}>
-                                <div className="grid grid-cols-[30px,1fr] gap-x-1 gap-y-1 text-[10px]">
-                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">Gte:</span> 
-                                    <select className={inlineInput} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
-                                        {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                    </select>
-                                    
-                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">DC:</span> 
-                                    <select className={inlineInput} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
-                                        <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                    </select>
-
-                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">Neg:</span> 
-                                    <select className={inlineInput} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
-                                        <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                    </select>
-
-                                    <span className="font-black text-gray-500 uppercase text-[8px] pt-1">Tec:</span> 
-                                    <select className={inlineInput} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
-                                        <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                    </select>
                                 </div>
                             </td>
                             

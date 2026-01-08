@@ -60,10 +60,33 @@ export const db = {
         return rows[0];
     },
     update: async (id: number, data: any) => {
-        const assignments = Object.keys(data).map((key, i) => `${key} = $${i + 2}`).join(', ');
+        // Verificar si hay campos para actualizar
+        const keys = Object.keys(data);
+        if (keys.length === 0) return null; // Nada que actualizar
+
+        const assignments = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
         const values = [id, ...Object.values(data)];
-        const { rows } = await db.query(`UPDATE ${tableName} SET ${assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`, values);
-        return rows[0];
+        
+        let query = `UPDATE ${tableName} SET ${assignments}`;
+        
+        // CORRECCIÓN: Según el esquema (init.sql), las tablas 'employees' y 'accounts' 
+        // NO tienen columna 'updated_at', solo 'created_at'.
+        // Solo 'opportunities' y 'opportunity_observations' la tienen.
+        const tablesWithTimestamp = ['opportunities', 'opportunity_observations'];
+        
+        if (tablesWithTimestamp.includes(tableName)) {
+             query += `, updated_at = CURRENT_TIMESTAMP`;
+        }
+        
+        query += ` WHERE id = $1 RETURNING *`;
+
+        try {
+            const { rows } = await db.query(query, values);
+            return rows[0];
+        } catch (error) {
+            console.error(`Error updating table ${tableName}:`, error);
+            throw error;
+        }
     }
   })
 };

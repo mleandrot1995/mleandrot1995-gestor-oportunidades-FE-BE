@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS motives;
 -- 1. Puestos y Roles
 CREATE TABLE job_roles (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL -- 'DC', 'Gerente Comercial', etc.
+    name VARCHAR(50) UNIQUE NOT NULL -- 'Aprobador', 'Gerente Comercial', etc.
 );
 
 -- 2. Empleados (Vendedores, Preventas, Managers)
@@ -52,7 +52,7 @@ CREATE TABLE opportunities (
     
     -- Responsables
     manager_id INT NOT NULL REFERENCES employees(id), -- Gerente Comercial
-    responsible_dc_id INT REFERENCES employees(id),
+    responsible_dc_id INT REFERENCES employees(id), -- Aprobador
     responsible_business_id INT REFERENCES employees(id),
     responsible_tech_id INT REFERENCES employees(id),
 
@@ -102,7 +102,7 @@ CREATE TABLE opportunity_observations (
 -- Puestos y Roles (Req 12, 13, 14)
 INSERT INTO job_roles (name) VALUES
 ('Gerente Comercial'),
-('DC'),
+('Aprobador'),
 ('Analista de negocios'),
 ('Responsable técnico');
 
@@ -113,7 +113,8 @@ INSERT INTO employees (full_name, role_id, is_active) VALUES
 ('Laura Martínez', 1, TRUE),
 ('Carlos Sánchez', 1, TRUE),
 ('Ana Gómez', 3, TRUE),
-('Javier Torres', 4, TRUE);
+('Javier Torres', 4, TRUE),
+('Sebastian', 3, TRUE); -- Agregado Sebastian como Analista de negocios
 
 -- Cuentas (Req 5)
 INSERT INTO accounts (name, contact_name, contact_email) VALUES
@@ -131,21 +132,25 @@ INSERT INTO opportunity_statuses (name) VALUES
 ('Desestimada'),
 ('Evaluación'),
 ('Elaboración'),
-('Esperando Respuesta');
+('Esperando Respuesta'),
+('En Progreso'),
+('Stand-by');
 
 -- Tipos de Documento (Req 10)
 INSERT INTO document_types (name) VALUES 
 ('Documento'), 
 ('Reunión'),
 ('Video'),
-('RFP');
+('RFP'),
+('Propuesta Técnica');
 
 -- Tipos de Oportunidad / ON (Req 11)
 INSERT INTO opportunity_types (name) VALUES 
 ('RPA'), 
 ('Desa Web'), 
 ('Servicio SW de soporte tecnico'), 
-('Licencias');
+('Licencias'),
+('Renovación de Licencia');
 
 -- Motivos (Req 23)
 INSERT INTO motives (name) VALUES 
@@ -156,14 +161,12 @@ INSERT INTO motives (name) VALUES
 
 -- Oportunidades de Ejemplo
 INSERT INTO opportunities 
-    (name, account_id, status_id, manager_id, responsible_dc_id, responsible_business_id, responsible_tech_id, percentage, color_code, start_date, delivery_date, estimated_hours, estimated_term_months, work_plan_link, has_ia_proposal, has_prototype, order_index)
+    (name, account_id, status_id, manager_id, responsible_dc_id, responsible_business_id, responsible_tech_id, percentage, color_code, start_date, delivery_date, real_delivery_date, estimated_hours, estimated_term_months, work_plan_link, has_ia_proposal, has_prototype, order_index)
 VALUES
-    ('Capacitación en RPA', 4, 1, 3, 1, 5, 6, 100, 'GREEN', '2025-09-01', '2025-09-26', 120, 30, 'https://sharepoint.com/kaufmann-rpa', TRUE, TRUE, 1),
-    ('Sistema JUCO Servicio', 5, 5, 3, 2, 5, 6, 55, 'YELLOW', '2025-11-01', '2025-12-01', 400, 60, '', FALSE, FALSE, 2),
-    ('Desarrollo Plataforma CIE', 6, 6, 4, 1, 5, 6, 0, 'RED', '2025-10-01', '2025-10-13', 0, 0, '', FALSE, FALSE, 3);
+    ('MIGRACIÓN A CLOUD DE SISTEMA ERP', 3, 7, 3, NULL, 7, NULL, 60, 'YELLOW', '2024-07-01', '2025-01-15', '2026-01-23', 1200, 6, 'https://plan-trabajo-link', TRUE, TRUE, 1),
+    ('PROPUESTA DE PRUEBA', 1, 4, 3, 4, 7, NULL, 0, 'RED', '2026-01-08', NULL, NULL, 1223, 2, 'https://otro-plan', TRUE, FALSE, 2);
 
 -- Observaciones de Ejemplo
 INSERT INTO opportunity_observations (opportunity_id, text) VALUES
-(1, 'Cliente solicitó capacitación modulo cero.'),
-(2, 'Se espera la OC y entrega de código.'),
-(3, 'El cliente holdea la oportunidad.');
+(1, 'Se requiere validar compatibilidad con base de datos Oracle antigua.'),
+(2, 'Nueva observación');

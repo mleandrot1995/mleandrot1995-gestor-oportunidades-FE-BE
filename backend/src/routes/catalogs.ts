@@ -26,7 +26,12 @@ router.post('/employees', async (req, res) => {
 router.put('/employees/:id', async (req, res) => {
     try {
         const { full_name, role_id, is_active } = req.body;
-        const updated = await db.table('employees').update(parseInt(req.params.id), { full_name, role_id, is_active });
+        const cleanData: any = {};
+        if (full_name !== undefined) cleanData.full_name = full_name;
+        if (role_id !== undefined) cleanData.role_id = role_id;
+        if (is_active !== undefined) cleanData.is_active = is_active;
+
+        const updated = await db.table('employees').update(parseInt(req.params.id), cleanData);
         res.json(updated);
     } catch (e) { res.status(500).json({ error: 'Error' }); }
 });

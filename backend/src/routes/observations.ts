@@ -3,13 +3,16 @@ import { db } from '../db/index.js';
 
 const router = Router();
 
-// Obtener todas las observaciones de una oportunidad específica
+// Obtener todas las observaciones de una oportunidad específica (ordenadas por fecha descendente)
 router.get('/opportunities/:id/observations', async (req, res) => {
     try {
         const opportunityId = parseInt(req.params.id, 10);
         if (isNaN(opportunityId)) return res.status(400).json({ error: 'Invalid opportunity ID' });
 
-        const rows = await db.table('opportunity_observations').where('opportunity_id', opportunityId).select();
+        const { rows } = await db.query(
+            'SELECT * FROM opportunity_observations WHERE opportunity_id = $1 ORDER BY created_at DESC', 
+            [opportunityId]
+        );
         res.json(rows);
     } catch (error) {
         console.error(error);

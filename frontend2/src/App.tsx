@@ -4,13 +4,22 @@ import EditModal from './components/EditModal';
 import AdminModal from './components/AdminModal';
 import * as api from './api';
 import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Motive } from './types/types';
-import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft } from 'lucide-react';
+import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft, Filter, X } from 'lucide-react';
 
 function App() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [activeTab, setActiveTab] = useState<'ON' | 'ON-OUT' | 'TRASH'>('ON');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Filters
+  const [filterAccount, setFilterAccount] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterManager, setFilterManager] = useState<string>('');
+  const [filterAprobador, setFilterAprobador] = useState<string>('');
+  const [filterNegocio, setFilterNegocio] = useState<string>('');
+  const [filterTecnico, setFilterTecnico] = useState<string>('');
+  const [filterKRed, setFilterKRed] = useState<string>('');
+
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -193,10 +202,37 @@ function App() {
       });
   };
 
-  const filteredOpps = sortOpportunities(opportunities.filter(o => 
-      o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.account_name && o.account_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  ));
+  const filteredOpps = sortOpportunities(opportunities.filter(o => {
+      const matchSearch = searchTerm === '' || 
+          o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (o.account_name && o.account_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (o.manager_name && o.manager_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (o.dc_name && o.dc_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (o.neg_name && o.neg_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (o.tec_name && o.tec_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchAccount = filterAccount === '' || o.account_name === filterAccount;
+      const matchStatus = filterStatus === '' || o.status_name === filterStatus;
+      const matchManager = filterManager === '' || o.manager_name === filterManager;
+      const matchAprobador = filterAprobador === '' || o.dc_name === filterAprobador;
+      const matchNegocio = filterNegocio === '' || o.neg_name === filterNegocio;
+      const matchTecnico = filterTecnico === '' || o.tec_name === filterTecnico;
+      const matchKRed = filterKRed === '' || String(o.k_red_index) === filterKRed;
+
+      return matchSearch && matchAccount && matchStatus && matchManager && matchAprobador && matchNegocio && matchTecnico && matchKRed;
+  }));
+
+  const clearFilters = () => {
+    setFilterAccount('');
+    setFilterStatus('');
+    setFilterManager('');
+    setFilterAprobador('');
+    setFilterNegocio('');
+    setFilterTecnico('');
+    setFilterKRed('');
+  };
+
+  const filterSelectClass = "bg-white border border-gray-200 rounded px-2 py-1 text-[10px] font-bold outline-none focus:border-blue-400 min-w-[100px]";
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-xs text-gray-800">
@@ -217,12 +253,12 @@ function App() {
                  
                  <button onClick={handleMoveToHistory} className="flex items-center space-x-2 px-3 py-1.5 border border-gray-200 rounded-lg text-[10px] font-black text-orange-600 hover:bg-orange-50 border-orange-200 uppercase tracking-widest shadow-sm transition-all">
                     <ArrowRightLeft size={12} />
-                    <span>Mover Filas</span>
+                    <span>Mover a historicos</span>
                  </button>
                  
                  <button onClick={handleNewOpportunity} className="flex items-center space-x-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95">
                     <Plus size={16} />
-                    <span>Nueva</span>
+                    <span>Nueva Oportunidad</span>
                  </button>
             </div>
         </div>
@@ -239,23 +275,84 @@ function App() {
             </div>
         </div>
 
-        <div className="mb-2 flex items-center justify-between bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
-            <div className="relative flex-1 max-w-lg">
+        <div className="mb-2 flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
+            <div className="relative flex-1 max-w-xs">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300" size={16} />
                 <input 
                     type="text" placeholder="Buscar..." 
-                    className="pl-10 pr-4 py-2 border-none rounded-lg text-xs w-full outline-none focus:ring-0 placeholder:text-gray-300 font-medium bg-gray-50/50"
+                    className="pl-10 pr-4 py-1.5 border-none rounded-lg text-xs w-full outline-none focus:ring-0 placeholder:text-gray-300 font-medium bg-gray-50/50"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                 />
             </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide flex-1">
+                <div className="flex items-center gap-1 text-[9px] font-black text-gray-400 uppercase tracking-tighter mr-1">
+                    <Filter size={12}/> Filtros:
+                </div>
+                
+                <select className={filterSelectClass} value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
+                    <option value="">Cuenta (Todas)</option>
+                    {Array.from(new Set(opportunities.map(o => o.account_name).filter(Boolean))).sort().map(name => (
+                        <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+
+                <select className={filterSelectClass} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                    <option value="">Estado (Todos)</option>
+                    {Array.from(new Set(opportunities.map(o => o.status_name).filter(Boolean))).sort().map(name => (
+                        <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+
+                <select className={filterSelectClass} value={filterManager} onChange={e => setFilterManager(e.target.value)}>
+                    <option value="">Gte (Todos)</option>
+                    {Array.from(new Set(opportunities.map(o => o.manager_name).filter(Boolean))).sort().map(name => (
+                        <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+
+                <select className={filterSelectClass} value={filterAprobador} onChange={e => setFilterAprobador(e.target.value)}>
+                    <option value="">Aprob (Todos)</option>
+                    {Array.from(new Set(opportunities.map(o => o.dc_name).filter(Boolean))).sort().map(name => (
+                        <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+
+                <select className={filterSelectClass} value={filterNegocio} onChange={e => setFilterNegocio(e.target.value)}>
+                    <option value="">Neg (Todos)</option>
+                    {Array.from(new Set(opportunities.map(o => o.neg_name).filter(Boolean))).sort().map(name => (
+                        <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+
+                <select className={filterSelectClass} value={filterTecnico} onChange={e => setFilterTecnico(e.target.value)}>
+                    <option value="">Tec (Todos)</option>
+                    {Array.from(new Set(opportunities.map(o => o.tec_name).filter(Boolean))).sort().map(name => (
+                        <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+
+                <select className={filterSelectClass} value={filterKRed} onChange={e => setFilterKRed(e.target.value)}>
+                    <option value="">K-Rojo (Todos)</option>
+                    {Array.from(new Set(opportunities.map(o => String(o.k_red_index)))) .sort((a,b) => Number(a)-Number(b)).map(val => (
+                        <option key={val} value={val}>{val}</option>
+                    ))}
+                </select>
+
+                {(filterAccount || filterStatus || filterManager || filterAprobador || filterNegocio || filterTecnico || filterKRed) && (
+                    <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 border border-red-100 rounded text-[9px] font-black uppercase hover:bg-red-100 transition-all shadow-sm whitespace-nowrap">
+                        <X size={12}/> <span>Limpiar</span>
+                    </button>
+                )}
+            </div>
+            
             {activeTab !== 'TRASH' && (
-                <div className="flex items-center space-x-4">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Reportes:</span>
-                    <div className="flex gap-2">
-                        <button className="flex items-center space-x-1 px-3 py-1.5 bg-green-50 text-green-700 border border-green-100 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-green-100 transition-all shadow-sm"><Download size={12}/> <span>Pablo</span></button>
-                        <button className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all shadow-sm"><Download size={12}/> <span>JP</span></button>
-                        <button className="flex items-center space-x-1 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-orange-100 transition-all shadow-sm"><Download size={12}/> <span>DC</span></button>
+                <div className="flex items-center space-x-1 ml-auto">
+                    <div className="flex gap-1">
+                        <button className="p-1.5 bg-green-50 text-green-700 border border-green-100 rounded hover:bg-green-100" title="Exportar Pablo"><Download size={12}/></button>
+                        <button className="p-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded hover:bg-blue-100" title="Exportar JP"><Download size={12}/></button>
+                        <button className="p-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded hover:bg-orange-100" title="Exportar DC"><Download size={12}/></button>
                     </div>
                 </div>
             )}

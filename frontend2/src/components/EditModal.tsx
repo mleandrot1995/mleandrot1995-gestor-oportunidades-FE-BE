@@ -126,7 +126,22 @@ const EditModal: React.FC<Props> = ({
     };
 
     const handleInputChange = (field: keyof Opportunity, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        let newData = { ...formData, [field]: value };
+
+        // Lógica especial para semáforo:
+        if (field === 'color_code') {
+            if (value === 'RED') {
+                newData.percentage = 0;
+            } else {
+                // Si el porcentaje actual no es válido para el nuevo color, lo limpiamos (o ponemos null/0)
+                // para obligar al usuario a ingresarlo.
+                if (!validateSemaforo(formData.percentage || 0, value)) {
+                    newData.percentage = undefined; // Lo dejamos "vacío"
+                }
+            }
+        }
+
+        setFormData(newData);
         setValidationMsg(null);
     };
 
@@ -136,12 +151,13 @@ const EditModal: React.FC<Props> = ({
     const labelStyle = "text-gray-500 font-bold text-[11px] uppercase tracking-wider mb-1 block";
     const sectionTitleStyle = "text-[#333] font-bold text-[15px] mb-4 border-b pb-2";
 
-    const filteredDC = teams.filter(t => t.role_name === 'DC' && t.is_active);
+    const filteredManagers = teams.filter(t => t.role_name === 'Gerente Comercial' && t.is_active);
+    const filteredAprobadores = teams.filter(t => t.role_name === 'Aprobador' && t.is_active);
     const filteredNeg = teams.filter(t => t.role_name === 'Analista de negocios' && t.is_active);
     const filteredTec = teams.filter(t => t.role_name === 'Responsable técnico' && t.is_active);
-    const filteredManagers = teams.filter(t => t.role_name === 'Gerente Comercial' && t.is_active);
 
     const semaforoInvalid = !validateSemaforo(formData.percentage || 0, formData.color_code || 'NONE');
+    const percentageEmpty = formData.percentage === undefined || formData.percentage === null;
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -228,9 +244,16 @@ const EditModal: React.FC<Props> = ({
                         <section>
                             <h3 className={sectionTitleStyle}><Users size={14} className="inline mr-2"/> Pipeline y Responsables</h3>
                             <div className="grid grid-cols-2 gap-4 mb-2">
-                                <div className={semaforoInvalid ? "ring-2 ring-red-500 rounded-lg p-1" : ""}>
+                                <div className={(semaforoInvalid || percentageEmpty) ? "ring-2 ring-red-500 rounded-lg p-1" : ""}>
                                     <label className={labelStyle}>Probabilidad (%)</label>
-                                    <input readOnly={isReadOnly} type="number" className={`${inputClasses} text-center font-bold`} value={formData.percentage || 0} onChange={e => handleInputChange('percentage', parseInt(e.target.value))} />
+                                    <input 
+                                        readOnly={isReadOnly} 
+                                        type="number" 
+                                        className={`${inputClasses} text-center font-bold`} 
+                                        value={formData.percentage ?? ''} 
+                                        onChange={e => handleInputChange('percentage', e.target.value === '' ? undefined : parseInt(e.target.value))} 
+                                        placeholder="Ingresar %"
+                                    />
                                     <p className="text-[9px] mt-1 text-blue-500 font-bold italic">{getRangeSuggestion(formData.color_code || 'NONE')}</p>
                                 </div>
                                 <div className={semaforoInvalid ? "ring-2 ring-red-500 rounded-lg p-1" : ""}>
@@ -243,8 +266,10 @@ const EditModal: React.FC<Props> = ({
                                     </select>
                                 </div>
                             </div>
-                            {semaforoInvalid && (
-                                <p className="text-[10px] text-red-600 font-bold uppercase mb-4 italic text-center">Combinación inválida</p>
+                            {(semaforoInvalid || percentageEmpty) && (
+                                <p className="text-[10px] text-red-600 font-bold uppercase mb-4 italic text-center">
+                                    {percentageEmpty ? "Debe ingresar un porcentaje" : "Combinación inválida"}
+                                </p>
                             )}
                             <div className="grid grid-cols-2 gap-4 mb-6 mt-4">
                                 <div>
@@ -275,10 +300,10 @@ const EditModal: React.FC<Props> = ({
                                     </select>
                                 </div>
                                 <div>
-                                    <label className={labelStyle}>Responsable DC</label>
+                                    <label className={labelStyle}>Responsable Aprobador</label>
                                     <select disabled={isReadOnly} className={inputClasses} value={formData.responsible_dc_id || ''} onChange={e => handleInputChange('responsible_dc_id', parseInt(e.target.value))}>
-                                        <option value="">Seleccione DC</option>
-                                        {filteredDC.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                                        <option value="">Seleccione Aprobador</option>
+                                        {filteredAprobadores.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
                                     </select>
                                 </div>
                                 <div>
