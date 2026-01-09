@@ -3,7 +3,7 @@ import OpportunityGrid from './components/OpportunityGrid';
 import EditModal from './components/EditModal';
 import AdminModal from './components/AdminModal';
 import * as api from './api';
-import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Motive } from './types/types';
+import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from './types/types';
 import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft, Filter, X } from 'lucide-react';
 
 function App() {
@@ -30,18 +30,16 @@ function App() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [statuses, setStatuses] = useState<OpportunityStatus[]>([]);
-  const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
   const [oppTypes, setOppTypes] = useState<OpportunityType[]>([]);
   const [motives, setMotives] = useState<Motive[]>([]);
 
   const fetchData = async () => {
     try {
-        const [opps, acc, emp, sta, doc, oty, mot] = await Promise.all([
+        const [opps, acc, emp, sta, oty, mot] = await Promise.all([
             api.getOpportunities(activeTab),
             api.getAccounts(),
             api.getEmployees(),
             api.getStatuses(),
-            api.getDocTypes(),
             api.getOppTypes(),
             api.fetchApi('/motives')
         ]);
@@ -49,7 +47,6 @@ function App() {
         setAccounts(acc);
         setEmployees(emp);
         setStatuses(sta);
-        setDocTypes(doc);
         setOppTypes(oty);
         setMotives(mot);
     } catch (err) {

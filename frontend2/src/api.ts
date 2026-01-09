@@ -35,7 +35,6 @@ export const deleteObservation = (id: number) => fetchApi(`/observations/${id}`,
 export const getAccounts = () => fetchApi('/accounts');
 export const getEmployees = () => fetchApi('/employees');
 export const getStatuses = () => fetchApi('/statuses');
-export const getDocTypes = () => fetchApi('/doc-types');
 export const getOppTypes = () => fetchApi('/opp-types');
 export const getJobRoles = () => fetchApi('/job-roles');
 
