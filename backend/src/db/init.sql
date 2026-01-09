@@ -99,21 +99,60 @@ CREATE TABLE opportunity_observations (
 --- INSERCIÓN DE DATOS SEGÚN REQUERIMIENTOS ---
 
 -- Puestos y Roles (Req 12, 13, 14)
-INSERT INTO job_roles (name) VALUES
-('Gerente Comercial'),
-('Aprobador'),
-('Analista de negocios'),
-('Responsable técnico');
+TRUNCATE TABLE job_roles RESTART IDENTITY CASCADE;
+INSERT INTO job_roles (id, name) VALUES  (1, 'Analista de negocios');
+INSERT INTO job_roles (id, name) VALUES  (2, 'Responsable técnico');
+INSERT INTO job_roles (id, name) VALUES  (3, 'Aprobador');
+INSERT INTO job_roles (id, name) VALUES  (4, 'Gerente Comercial')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+SELECT setval('job_roles_id_seq', 4, true);
 
 -- Empleados (Req 3, 12, 13, 14)
-INSERT INTO employees (full_name, role_id, is_active) VALUES
-('Matias Lopez Barrios', 2, TRUE),
-('Esteban Rodriguez', 2, TRUE),
-('Laura Martínez', 1, TRUE),
-('Carlos Sánchez', 1, TRUE),
-('Ana Gómez', 3, TRUE),
-('Javier Torres', 4, TRUE),
-('Sebastian', 3, TRUE); -- Agregado Sebastian como Analista de negocios
+TRUNCATE TABLE employees RESTART IDENTITY CASCADE;
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Adriana Fabiani',1,1,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Adriana Fabiani/Sebastian Casati',1,2,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Alejandra Cau Juliá',1,3,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Analia Romano',4,4,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Belen Gentile',4,5,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Carlos de Cabo',2,6,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Carlos Giogi',4,7,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('COE',3,8,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Comité IT',3,9,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Damian Kakazu/Matias Lopez Barrios',3,10,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Daniel Carabel/Alejandra Cau Juliá',1,11,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Eduardo Chaparro',3,12,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Eduardo Chaparro',2,13,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Eduardo Chaparro/Eduardo Castillo',3,14,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Esteban Rodriguez',3,15,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Juan Valdes',2,16,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Lakaut',2,17,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Leandro Sayago',3,18,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Leandro Sayago',1,19,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Leandro Toloza/Alejandra Cau Juliá',1,20,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Lucas Cabalaro',2,21,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Lucas Percello',2,22,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Lucas Percello/Sebastian Redondo',2,23,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Matias Lopez Barrios',1,24,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Matias Lopez Barrios',2,25,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('N/A',3,26,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('N/A',1,27,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('N/A',2,28,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Pablo Barralia Lakaut',3,29,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Pablo Macchia',2,30,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Pablo Macchia/Stratesys',2,31,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Pablo Segobia/Alejandra Cau Juliá',1,32,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Ramses  Echeverria',2,33,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Rocio Iribarne Cattaneo',4,34,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('S/Inform',2,35,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Santiago Butelo',1,36,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Sebastian Casati/Alejandra Cau Jliá',1,37,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Sergio Dure',4,38,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Xime Dabbe',4,39,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Ximena Dabbe',4,40,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('Yamila Garre',4,41,TRUE);
+INSERT INTO employees (full_name, role_id,id, is_active) VALUES ('',1,42,TRUE)
+ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
+SELECT setval('employees_id_seq', 42, true);
 
 -- Cuentas (Req 5)
 -- Eliminar datos anteriores si existen para reiniciar la secuencia o evitar duplicados en una inserción limpia
@@ -238,7 +277,7 @@ INSERT INTO accounts (id, name, is_active) VALUES (117, 'Volkswagen', TRUE);
 INSERT INTO accounts (id, name, is_active) VALUES (118, 'Yottalan', TRUE)
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, is_active = EXCLUDED.is_active;
 -- Ajustar la secuencia para que el próximo ID sea 119
-SELECT setval('accounts_id_seq', 119, true);
+SELECT setval('accounts_id_seq', 118, true);
 
 -- Estados de Oportunidad (Req 7)
 TRUNCATE TABLE opportunity_statuses RESTART IDENTITY CASCADE;
@@ -261,33 +300,50 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 SELECT setval('opportunity_statuses_id_seq', 14, true);
 
 -- Tipos de Oportunidad / ON (Req 11)
-INSERT INTO opportunity_types (name) VALUES 
-('RPA'), 
-('Desa Web'), 
-('Servicio SW de soporte tecnico'), 
-('Licencias'),
-('Renovación de Licencia');
+TRUNCATE TABLE opportunity_types RESTART IDENTITY CASCADE;
+INSERT INTO opportunity_types (id, name) VALUES  (1, 'Desa Web');
+INSERT INTO opportunity_types (id, name) VALUES  (2, 'IA-ML');
+INSERT INTO opportunity_types (id, name) VALUES  (3, 'Data');
+INSERT INTO opportunity_types (id, name) VALUES  (4, 'Anteproyecto');
+INSERT INTO opportunity_types (id, name) VALUES  (5, 'UX');
+INSERT INTO opportunity_types (id, name) VALUES  (6, 'Soporte Técnico');
+INSERT INTO opportunity_types (id, name) VALUES  (7, 'Desa Mobile');
+INSERT INTO opportunity_types (id, name) VALUES  (8, 'Ciberseguridad');
+INSERT INTO opportunity_types (id, name) VALUES  (9, 'RPA-Power');
+INSERT INTO opportunity_types (id, name) VALUES  (10, 'Soporte Infraestructura');
+INSERT INTO opportunity_types (id, name) VALUES  (11, 'QA-Testing');
+INSERT INTO opportunity_types (id, name) VALUES  (12, 'Licencias');
+INSERT INTO opportunity_types (id, name) VALUES  (13, 'Data o BI');
+INSERT INTO opportunity_types (id, name) VALUES  (14, 'N/A');
+INSERT INTO opportunity_types (id, name) VALUES  (15, 'RPA-Uipath');
+INSERT INTO opportunity_types (id, name) VALUES  (16, 'Desa Web ');
+INSERT INTO opportunity_types (id, name) VALUES  (17, 'Desa Web Mob');
+INSERT INTO opportunity_types (id, name) VALUES  (18, 'RPA-Rocket');
+INSERT INTO opportunity_types (id, name) VALUES  (19, 'SAP');
+INSERT INTO opportunity_types (id, name) VALUES  (20, 'Otras');
+INSERT INTO opportunity_types (id, name) VALUES  (21, 'Discovery-Diseño');
+INSERT INTO opportunity_types (id, name) VALUES  (22, 'Seguridad');
+INSERT INTO opportunity_types (id, name) VALUES  (23, 'Capacity')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+SELECT setval('opportunity_types_id_seq', 23, true);
 
 -- Motivos (Req 23)
 -- Eliminar datos anteriores si existen para reiniciar la secuencia o evitar duplicados en una inserción limpia
 TRUNCATE TABLE motives RESTART IDENTITY CASCADE;
-
-INSERT INTO motives (id, name) VALUES 
-(1, '3'),
-(2, 'Alcance'),
-(3, 'Baja Dirección'),
-(4, 'Cerrada por el cliente'),
-(5, 'Cliente sin Presupuesto'),
-(6, 'Cliente sin respuesta'),
-(7, 'Costo'),
-(8, 'Costo Experiencia'),
-(9, 'Costo Tiempo'),
-(10, 'Falta Motivo'),
-(11, 'Sin Presupuesto'),
-(12, 'Sin Relevar'),
-(13, 'Sin Servicio')
+INSERT INTO motives (id, name) VALUES (1, '3');
+INSERT INTO motives (id, name) VALUES (2, 'Alcance');
+INSERT INTO motives (id, name) VALUES (3, 'Baja Dirección');
+INSERT INTO motives (id, name) VALUES (4, 'Cerrada por el cliente');
+INSERT INTO motives (id, name) VALUES (5, 'Cliente sin Presupuesto');
+INSERT INTO motives (id, name) VALUES (6, 'Cliente sin respuesta');
+INSERT INTO motives (id, name) VALUES (7, 'Costo');
+INSERT INTO motives (id, name) VALUES (8, 'Costo Experiencia');
+INSERT INTO motives (id, name) VALUES (9, 'Costo Tiempo');
+INSERT INTO motives (id, name) VALUES (10, 'Falta Motivo');
+INSERT INTO motives (id, name) VALUES (11, 'Sin Presupuesto');
+INSERT INTO motives (id, name) VALUES (12, 'Sin Relevar');
+INSERT INTO motives (id, name) VALUES (13, 'Sin Servicio')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
-
 -- Ajustar la secuencia para que el próximo ID sea 14
 SELECT setval('motives_id_seq', 13, true);
 
