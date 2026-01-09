@@ -54,7 +54,7 @@ CREATE TABLE opportunities (
     responsible_tech_id INT REFERENCES employees(id),
 
     -- Semáforo y Reglas de Negocio
-    percentage INT NOT NULL DEFAULT 0 CHECK (percentage BETWEEN 0 AND 100),
+    percentage INT DEFAULT 0 CHECK (percentage BETWEEN 0 AND 100),
     color_code VARCHAR(10) NOT NULL DEFAULT 'NONE', -- 'RED', 'YELLOW', 'GREEN', 'NONE'
     has_ia_proposal BOOLEAN DEFAULT FALSE,
     has_prototype BOOLEAN DEFAULT FALSE,
@@ -64,7 +64,7 @@ CREATE TABLE opportunities (
     motive_id INT REFERENCES motives(id),
     
     -- Cronograma (Campos mantenidos originalmente)
-    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    start_date DATE DEFAULT CURRENT_DATE, -- CORREGIDO: Permite valores nulos
     understanding_date DATE,
     engagement_date DATE,
     scope_date DATE,
