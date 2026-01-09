@@ -41,7 +41,7 @@ export interface Opportunity {
     
     // Métricas de Esfuerzo e Integración
     estimated_hours?: number;
-    estimated_term_months?: number;
+    estimated_term_months?: number; // Puede ser decimal en frontend
     work_plan_link?: string;
     order_index?: number;
 
@@ -79,11 +79,6 @@ export interface Employee {
 }
 
 export interface OpportunityStatus {
-    id: number;
-    name: string;
-}
-
-export interface DocumentType {
     id: number;
     name: string;
 }

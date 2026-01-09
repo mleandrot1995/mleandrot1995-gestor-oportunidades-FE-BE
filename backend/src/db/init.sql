@@ -75,7 +75,7 @@ CREATE TABLE opportunities (
     
     -- Métricas de Esfuerzo e Integración
     estimated_hours INT,
-    estimated_term_months INT,
+    estimated_term_months NUMERIC(10,1), -- Modificado para permitir decimales (ej. 2.5)
     work_plan_link TEXT,
     k_red_index INT DEFAULT 0,
     order_index INT DEFAULT 0,
@@ -144,18 +144,34 @@ INSERT INTO opportunity_types (name) VALUES
 ('Renovación de Licencia');
 
 -- Motivos (Req 23)
-INSERT INTO motives (name) VALUES 
-('Precio'), 
-('Plazo'), 
-('Capacidad Técnica'), 
-('Otros');
+-- Eliminar datos anteriores si existen para reiniciar la secuencia o evitar duplicados en una inserción limpia
+TRUNCATE TABLE motives RESTART IDENTITY CASCADE;
+
+INSERT INTO motives (id, name) VALUES 
+(1, '3'),
+(2, 'Alcance'),
+(3, 'Baja Dirección'),
+(4, 'Cerrada por el cliente'),
+(5, 'Cliente sin Presupuesto'),
+(6, 'Cliente sin respuesta'),
+(7, 'Costo'),
+(8, 'Costo Experiencia'),
+(9, 'Costo Tiempo'),
+(10, 'Falta Motivo'),
+(11, 'Sin Presupuesto'),
+(12, 'Sin Relevar'),
+(13, 'Sin Servicio')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+
+-- Ajustar la secuencia para que el próximo ID sea 14
+SELECT setval('motives_id_seq', 13, true);
 
 -- Oportunidades de Ejemplo
 INSERT INTO opportunities 
     (name, account_id, status_id, manager_id, responsible_dc_id, responsible_business_id, responsible_tech_id, percentage, color_code, start_date, delivery_date, real_delivery_date, estimated_hours, estimated_term_months, work_plan_link, has_ia_proposal, has_prototype, has_rfp, has_anteproyecto, order_index)
 VALUES
-    ('MIGRACIÓN A CLOUD DE SISTEMA ERP', 3, 7, 3, NULL, 7, NULL, 60, 'YELLOW', '2024-07-01', '2025-01-15', '2026-01-23', 1200, 6, 'https://plan-trabajo-link', TRUE, TRUE, FALSE, TRUE, 1),
-    ('PROPUESTA DE PRUEBA', 1, 4, 3, 4, 7, NULL, 0, 'RED', '2026-01-08', NULL, NULL, 1223, 2, 'https://otro-plan', TRUE, FALSE, TRUE, FALSE, 2);
+    ('MIGRACIÓN A CLOUD DE SISTEMA ERP', 3, 7, 3, NULL, 7, NULL, 60, 'YELLOW', '2024-07-01', '2025-01-15', '2026-01-23', 1200, 6.5, 'https://plan-trabajo-link', TRUE, TRUE, FALSE, TRUE, 1),
+    ('PROPUESTA DE PRUEBA', 1, 4, 3, 4, 7, NULL, 0, 'RED', '2026-01-08', NULL, NULL, 1223, 2.5, 'https://otro-plan', TRUE, FALSE, TRUE, FALSE, 2);
 
 -- Observaciones de Ejemplo
 INSERT INTO opportunity_observations (opportunity_id, text) VALUES

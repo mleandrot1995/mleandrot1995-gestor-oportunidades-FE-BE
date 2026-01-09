@@ -30,7 +30,7 @@ const OpportunitySchema = z.object({
     commitment_date: z.string().nullable().optional(),
     real_delivery_date: z.string().nullable().optional(),
     estimated_hours: z.number().nullable().optional(),
-    estimated_term_months: z.number().nullable().optional(),
+    estimated_term_months: z.number().optional().nullable(), // Changed to number().optional() to accept decimals
     work_plan_link: z.string().nullable().optional(),
     k_red_index: z.number().optional(),
     order_index: z.number().optional(),

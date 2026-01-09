@@ -371,7 +371,6 @@ function App() {
             accounts={accounts}
             employees={employees}
             statuses={statuses}
-            docTypes={docTypes}
             oppTypes={oppTypes}
             motives={motives}
         />
@@ -387,7 +386,6 @@ function App() {
         accounts={accounts}
         teams={employees}
         statuses={statuses}
-        docTypes={docTypes}
         oppTypes={oppTypes}
       />}
 
