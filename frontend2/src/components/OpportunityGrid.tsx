@@ -241,7 +241,7 @@ const OpportunityGrid: React.FC<Props> = ({
                             
                             <td className={`p-0 relative w-20 align-stretch h-full border-b border-r border-gray-300 transition-colors ${getSemaforoStyle(opp.color_code)}`}>
                                 <div className="flex items-center justify-center w-full h-full min-h-[80px] relative group/percent">
-                                    <span className="relative z-10 font-black text-[14px]">{opp.percentage}%</span>
+                                    <span className="relative z-10 font-black text-[12px]">{opp.percentage}%</span>
                                     
                                     {!isReadOnlyView && (
                                         <div className="absolute inset-0 opacity-0 group-hover/percent:opacity-100 bg-white flex flex-col p-2 gap-1.5 transition-opacity z-20 shadow-lg justify-center border text-gray-800">
@@ -283,7 +283,7 @@ const OpportunityGrid: React.FC<Props> = ({
                             <td className={`${cellClass}`}>
                                 <div className="flex flex-col gap-1">
                                     <textarea 
-                                        className={`${inlineInput} font-black uppercase text-sm resize-none h-12 overflow-y-auto leading-tight`} 
+                                        className={`${inlineInput} font-black uppercase text-[11px] resize-none h-12 overflow-y-auto leading-tight`} 
                                         defaultValue={opp.name} 
                                         onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
                                         disabled={isReadOnlyView} 
@@ -310,19 +310,19 @@ const OpportunityGrid: React.FC<Props> = ({
                             <td className={`${cellClass} text-center`}>
                                 <div className="flex flex-col items-center gap-1.5">
                                     <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
-                                        <select className={`${inlineInput} text-center text-[10px] font-black uppercase !bg-transparent !text-inherit`} value={opp.status_id} onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <select className={`${inlineInput} text-center text-[9px] font-black uppercase !bg-transparent !text-inherit`} value={opp.status_id} onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                             {statuses.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
                                         </select>
                                     </div>
                                     <div className="w-full border border-gray-200 rounded-md bg-gray-50/50 p-1">
-                                        <select className={`${inlineInput} text-center text-[10px] italic font-bold text-gray-700 !bg-transparent`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
+                                        <select className={`${inlineInput} text-center text-[9px] italic font-bold text-gray-700 !bg-transparent`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
                                             <option value="">- Motivo -</option>
                                             {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="flex items-center justify-center gap-1 w-full border border-red-100 rounded-md bg-red-50/30 p-1">
-                                        <span className="text-[10px] font-black text-red-600 uppercase">K-Rojo:</span>
-                                        <input type="number" className="w-10 text-[12px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
+                                        <span className="text-[9px] font-black text-red-600 uppercase">K-Rojo:</span>
+                                        <input type="number" className="w-10 text-[10px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
                                     </div>
                                 </div>
                             </td>
