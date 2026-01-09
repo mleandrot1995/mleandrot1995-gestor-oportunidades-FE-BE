@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Motive } from '../types/types';
-import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone } from 'lucide-react';
+import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File } from 'lucide-react';
 import * as api from '../api';
 
 interface Props {
@@ -225,7 +225,7 @@ const OpportunityGrid: React.FC<Props> = ({
                         <th className={`${headerClass} w-20`}>%</th>
                         <th className={`${headerClass} w-44`}>Cuenta</th>
                         <th className={`${headerClass} w-52`}>Oportunidad</th>
-                        <th className={`${headerClass} w-36`}>Observaciones</th>
+                        <th className={`${headerClass} w-52`}>Observaciones</th>
                         <th className={`${headerClass} w-40`}>Estado</th>
                         <th className={`${headerClass} w-44`}>Cronograma</th>
                         <th className={`${headerClass} w-48`}>Equipo</th>
@@ -237,7 +237,7 @@ const OpportunityGrid: React.FC<Props> = ({
                 <tbody className="bg-white">
                     {data.map(opp => (
                         <tr key={opp.id} className="hover:bg-gray-50/30 transition-colors group">
-                            <td className="px-1 py-3 text-center text-gray-500 text-[10px] font-bold border-b border-r border-gray-300">{opp.id}</td>
+                            <td className="px-1 py-1 text-center text-gray-500 text-[10px] font-bold border-b border-r border-gray-300">{opp.id}</td>
                             
                             <td className={`p-0 relative w-20 align-stretch h-full border-b border-r border-gray-300 transition-colors ${getSemaforoStyle(opp.color_code)}`}>
                                 <div className="flex items-center justify-center w-full h-full min-h-[80px] relative group/percent">
@@ -274,60 +274,81 @@ const OpportunityGrid: React.FC<Props> = ({
                                 </div>
                             </td>
                             
-                            <td className={`${cellClass} font-black`}>
+                            <td className={`${cellClass} font-black py-1`}>
                                 <select className={`${inlineInput} text-sm font-bold`} value={opp.account_id} onChange={e => handleSaveField(opp.id, 'account_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                     {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                                 </select>
                             </td>
                             
-                            <td className={`${cellClass}`}>
+                            <td className={`${cellClass} py-1`}>
                                 <div className="flex flex-col gap-1">
                                     <textarea 
-                                        className={`${inlineInput} font-black uppercase text-[11px] resize-none h-12 overflow-y-auto leading-tight`} 
+                                        className={`${inlineInput} uppercase text-[11px] resize-none h-12 overflow-y-auto leading-tight p-0.5`} 
                                         defaultValue={opp.name} 
                                         onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
                                         disabled={isReadOnlyView} 
                                     />
-                                    <div className="flex gap-3 px-1 mt-1">
-                                        <label className={`text-[10px] font-bold flex items-center gap-1 cursor-pointer select-none px-2 py-1 rounded-md transition-all border ${opp.has_ia_proposal ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                    <div className="flex gap-2 px-1 mt-1 flex-wrap">
+                                        <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_ia_proposal ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
                                             <input type="checkbox" className="hidden" checked={opp.has_ia_proposal} onChange={e => handleSaveField(opp.id, 'has_ia_proposal', e.target.checked)} disabled={isReadOnlyView} />
-                                            <Cpu size={14} className={opp.has_ia_proposal ? "text-purple-600" : "text-gray-400"} />
+                                            <Cpu size={12} className={opp.has_ia_proposal ? "text-purple-600" : "text-gray-400"} />
                                             IA
                                         </label>
-                                        <label className={`text-[10px] font-bold flex items-center gap-1 cursor-pointer select-none px-2 py-1 rounded-md transition-all border ${opp.has_prototype ? 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                        <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_prototype ? 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
                                             <input type="checkbox" className="hidden" checked={opp.has_prototype} onChange={e => handleSaveField(opp.id, 'has_prototype', e.target.checked)} disabled={isReadOnlyView} />
-                                            <Smartphone size={14} className={opp.has_prototype ? "text-blue-600" : "text-gray-400"} />
+                                            <Smartphone size={12} className={opp.has_prototype ? "text-blue-600" : "text-gray-400"} />
                                             PROTOTIPO
+                                        </label>
+                                        <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_rfp ? 'bg-pink-100 text-pink-700 border-pink-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                            <input type="checkbox" className="hidden" checked={opp.has_rfp} onChange={e => handleSaveField(opp.id, 'has_rfp', e.target.checked)} disabled={isReadOnlyView} />
+                                            <FileCheck size={12} className={opp.has_rfp ? "text-pink-600" : "text-gray-400"} />
+                                            RFP
+                                        </label>
+                                        <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_anteproyecto ? 'bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                            <input type="checkbox" className="hidden" checked={opp.has_anteproyecto} onChange={e => handleSaveField(opp.id, 'has_anteproyecto', e.target.checked)} disabled={isReadOnlyView} />
+                                            <File size={12} className={opp.has_anteproyecto ? "text-indigo-600" : "text-gray-400"} />
+                                            ANTEPROY.
                                         </label>
                                     </div>
                                 </div>
                             </td>
                             
-                            <td className={`${cellClass} max-w-xs`}>
-                                <textarea className={`${inlineInput} italic text-sm leading-tight resize-none h-16 font-medium text-gray-700`} defaultValue={opp.last_observation || ''} onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} disabled={isReadOnlyView} />
+                            <td className={`${cellClass} max-w-xs py-1`}>
+                                <textarea 
+                                    className={`${inlineInput} italic text-[11px] leading-tight resize-none h-20 font-medium text-gray-700 p-0.5 border border-gray-200 rounded focus:border-blue-300`} 
+                                    defaultValue={opp.last_observation || ''} 
+                                    onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} 
+                                    disabled={isReadOnlyView} 
+                                />
                             </td>
                             
-                            <td className={`${cellClass} text-center`}>
+                            <td className={`${cellClass} text-center py-1`}>
                                 <div className="flex flex-col items-center gap-1.5">
                                     <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
-                                        <select className={`${inlineInput} text-center text-[9px] font-black uppercase !bg-transparent !text-inherit`} value={opp.status_id} onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                        <select 
+                                            className={`${inlineInput} text-center text-[9px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
+                                            value={opp.status_id} 
+                                            onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} 
+                                            disabled={isReadOnlyView}
+                                            style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                                        >
                                             {statuses.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
                                         </select>
                                     </div>
                                     <div className="w-full border border-gray-200 rounded-md bg-gray-50/50 p-1">
-                                        <select className={`${inlineInput} text-center text-[9px] italic font-bold text-gray-700 !bg-transparent`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
+                                        <select className={`${inlineInput} text-center text-[8px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
                                             <option value="">- Motivo -</option>
                                             {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="flex items-center justify-center gap-1 w-full border border-red-100 rounded-md bg-red-50/30 p-1">
                                         <span className="text-[9px] font-black text-red-600 uppercase">K-Rojo:</span>
-                                        <input type="number" className="w-10 text-[10px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
+                                        <input type="number" className="w-10 text-[9px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
                                     </div>
                                 </div>
                             </td>
                             
-                            <td className={`${cellClass} text-[10px]`}>
+                            <td className={`${cellClass} text-[10px] py-1`}>
                                 <div className="grid grid-cols-[80px,1fr] gap-x-1 gap-y-1">
                                     <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Inicio:</span> 
                                     {renderDateInput(opp.id, 'start_date', opp.start_date)}
@@ -349,31 +370,31 @@ const OpportunityGrid: React.FC<Props> = ({
                                 </div>
                             </td>
 
-                            <td className={`${cellClass}`}>
+                            <td className={`${cellClass} py-1`}>
                                 <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Gte:</span> 
-                                    <select className={`${inlineInput} text-[12px]`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                     
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1 text-nowrap">Aprob:</span> 
-                                    <select className={`${inlineInput} text-[12px]`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Neg:</span> 
-                                    <select className={`${inlineInput} text-[12px]`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Tec:</span> 
-                                    <select className={`${inlineInput} text-[12px]`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                 </div>
                             </td>
                             
-                            <td className={`${cellClass} text-center`}>
+                            <td className={`${cellClass} text-center py-1`}>
                                 <div className="flex flex-col gap-1 items-center">
                                     <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Inicio:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.start_date, opp.understanding_date)}</span></div>
                                     <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Entendim.:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.understanding_date, opp.scope_date)}</span></div>
@@ -384,7 +405,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                 </div>
                             </td>
                             
-                            <td className={`${cellClass}`}>
+                            <td className={`${cellClass} py-1`}>
                                 <div className="flex flex-col gap-1 items-center">
                                     <div className="flex items-center gap-2 text-gray-900">
                                         <Clock size={14} className="text-gray-400" />
@@ -407,7 +428,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                 </div>
                             </td>
                             
-                            <td className="px-2 py-3 text-center align-middle border-b border-gray-300">
+                            <td className="px-2 py-1 text-center align-middle border-b border-gray-300">
                                 <div className="flex flex-col gap-1 items-center">
                                     {isTrashView ? (
                                         <div className="w-full flex flex-col gap-1">

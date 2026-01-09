@@ -112,10 +112,13 @@ function App() {
       if (!window.confirm("¿Desea mover registros a históricos según las reglas de negocio?")) return;
       
       const toMove = opportunities.filter(o => {
-          // Rule 3.1: Color Rojo y k-orden (order_index) > 3
+          // Rule 3.1: Color Rojo y k-orden (k_red_index) >= 3
+          
           const isRed = o.color_code === 'RED';
-          const highOrder = (o.order_index || 0) > 3;
-          if (isRed && highOrder) return true;
+          // Asumimos que "k-orden" se refiere al índice K-Rojo visible en la UI.
+          const highKRedIndex = (o.k_red_index || 0) >= 3; 
+
+          if (isRed && highKRedIndex) return true;
 
           // Rule 3.2: Estado contiene "Ganada" o "Perdida"
           const status = (o.status_name || "").toUpperCase();
@@ -149,7 +152,7 @@ function App() {
             id: nextId,
             name: '',
             account_id: accounts[0]?.id || 0,
-            status_id: statuses[0]?.id || 0,
+            status_id: statuses.find(s => s.name.toUpperCase().includes('EVALUACIÓN'))?.id || statuses[0]?.id || 0,
             manager_id: employees.find(e => e.role_name === 'Gerente Comercial')?.id || employees[0]?.id || 0,
             percentage: 0,
             color_code: 'NONE',

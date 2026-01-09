@@ -82,14 +82,6 @@ router.get('/statuses', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Error' }); }
 });
 
-// --- DOC TYPES ---
-router.get('/doc-types', async (req, res) => {
-    try {
-        const rows = await db.table('document_types').select();
-        res.json(rows);
-    } catch (e) { res.status(500).json({ error: 'Error' }); }
-});
-
 // --- OPP TYPES ---
 router.get('/opp-types', async (req, res) => {
     try {

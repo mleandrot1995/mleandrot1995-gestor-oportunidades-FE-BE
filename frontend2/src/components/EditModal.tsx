@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, MessageSquare, Plus, Calendar, Clock, Users, Info, FileText, CheckSquare, Square, Link as LinkIcon, Sparkles, Layout, AlertCircle } from 'lucide-react';
+import { X, Save, MessageSquare, Plus, Calendar, Clock, Users, Info, FileText, CheckSquare, Square, Link as LinkIcon, Sparkles, Layout, AlertCircle, FileCheck, File } from 'lucide-react';
 import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Observation, Motive } from '../types/types';
 import * as api from '../api';
 
@@ -52,11 +52,13 @@ const EditModal: React.FC<Props> = ({
                 setFormData({
                     name: '',
                     account_id: accounts[0]?.id || 0,
-                    status_id: statuses[0]?.id || 0,
+                    status_id: statuses.find(s => s.name.toUpperCase().includes('EVALUACIÓN'))?.id || statuses[0]?.id || 0,
                     percentage: 0,
                     color_code: 'NONE',
                     has_ia_proposal: false,
                     has_prototype: false,
+                    has_rfp: false,
+                    has_anteproyecto: false,
                     start_date: new Date().toISOString().split('T')[0],
                     manager_id: teams.find(t => t.role_name === 'Gerente Comercial')?.id || teams[0]?.id || 0,
                     k_red_index: 0
@@ -203,14 +205,7 @@ const EditModal: React.FC<Props> = ({
                                     <label className={labelStyle}>Nombre de la Oportunidad</label>
                                     <input readOnly={isReadOnly} type="text" className={inputClasses} value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className={labelStyle}>Tipo de Documento</label>
-                                        <select disabled={isReadOnly} className={inputClasses} value={formData.document_type_id || ''} onChange={e => handleInputChange('document_type_id', parseInt(e.target.value))}>
-                                            <option value="">-</option>
-                                            {docTypes.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                                        </select>
-                                    </div>
+                                <div className="grid grid-cols-1 gap-4">
                                     <div>
                                         <label className={labelStyle}>Tipo Oportunidad</label>
                                         <select disabled={isReadOnly} className={inputClasses} value={formData.opportunity_type_id || ''} onChange={e => handleInputChange('opportunity_type_id', parseInt(e.target.value))}>
@@ -234,6 +229,22 @@ const EditModal: React.FC<Props> = ({
                                         </div>
                                         <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
                                             <Layout size={14} className="text-blue-500"/> Incluye Prototipo
+                                        </span>
+                                    </button>
+                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_rfp', !formData.has_rfp)} className="flex items-center gap-4 w-full text-left">
+                                        <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${formData.has_rfp ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                            {formData.has_rfp && <Plus size={14} strokeWidth={4}/>}
+                                        </div>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
+                                            <FileCheck size={14} className="text-pink-500"/> Incluye RFP
+                                        </span>
+                                    </button>
+                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_anteproyecto', !formData.has_anteproyecto)} className="flex items-center gap-4 w-full text-left">
+                                        <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${formData.has_anteproyecto ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                            {formData.has_anteproyecto && <Plus size={14} strokeWidth={4}/>}
+                                        </div>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
+                                            <File size={14} className="text-indigo-500"/> Incluye Anteproyecto
                                         </span>
                                     </button>
                                 </div>

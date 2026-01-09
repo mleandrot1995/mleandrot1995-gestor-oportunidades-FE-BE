@@ -6,7 +6,6 @@ DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS job_roles;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS opportunity_statuses;
-DROP TABLE IF EXISTS document_types;
 DROP TABLE IF EXISTS opportunity_types;
 DROP TABLE IF EXISTS motives;
 
@@ -37,7 +36,6 @@ CREATE TABLE accounts (
 
 -- 4. Auxiliares de Negocio
 CREATE TABLE opportunity_statuses (id SERIAL PRIMARY KEY, name VARCHAR(100) UNIQUE NOT NULL);
-CREATE TABLE document_types (id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL);
 CREATE TABLE opportunity_types (id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL);
 CREATE TABLE motives (id SERIAL PRIMARY KEY, name VARCHAR(100) UNIQUE NOT NULL);
 
@@ -48,7 +46,6 @@ CREATE TABLE opportunities (
     account_id INT NOT NULL REFERENCES accounts(id),
     status_id INT NOT NULL REFERENCES opportunity_statuses(id),
     opportunity_type_id INT REFERENCES opportunity_types(id),
-    document_type_id INT REFERENCES document_types(id),
     
     -- Responsables
     manager_id INT NOT NULL REFERENCES employees(id), -- Gerente Comercial
@@ -61,6 +58,8 @@ CREATE TABLE opportunities (
     color_code VARCHAR(10) NOT NULL DEFAULT 'NONE', -- 'RED', 'YELLOW', 'GREEN', 'NONE'
     has_ia_proposal BOOLEAN DEFAULT FALSE,
     has_prototype BOOLEAN DEFAULT FALSE,
+    has_rfp BOOLEAN DEFAULT FALSE, -- NUEVO CAMPO: RFP
+    has_anteproyecto BOOLEAN DEFAULT FALSE, -- NUEVO CAMPO: Anteproyecto
     reason_motive TEXT,
     motive_id INT REFERENCES motives(id),
     
@@ -136,14 +135,6 @@ INSERT INTO opportunity_statuses (name) VALUES
 ('En Progreso'),
 ('Stand-by');
 
--- Tipos de Documento (Req 10)
-INSERT INTO document_types (name) VALUES 
-('Documento'), 
-('Reunión'),
-('Video'),
-('RFP'),
-('Propuesta Técnica');
-
 -- Tipos de Oportunidad / ON (Req 11)
 INSERT INTO opportunity_types (name) VALUES 
 ('RPA'), 
@@ -161,10 +152,10 @@ INSERT INTO motives (name) VALUES
 
 -- Oportunidades de Ejemplo
 INSERT INTO opportunities 
-    (name, account_id, status_id, manager_id, responsible_dc_id, responsible_business_id, responsible_tech_id, percentage, color_code, start_date, delivery_date, real_delivery_date, estimated_hours, estimated_term_months, work_plan_link, has_ia_proposal, has_prototype, order_index)
+    (name, account_id, status_id, manager_id, responsible_dc_id, responsible_business_id, responsible_tech_id, percentage, color_code, start_date, delivery_date, real_delivery_date, estimated_hours, estimated_term_months, work_plan_link, has_ia_proposal, has_prototype, has_rfp, has_anteproyecto, order_index)
 VALUES
-    ('MIGRACIÓN A CLOUD DE SISTEMA ERP', 3, 7, 3, NULL, 7, NULL, 60, 'YELLOW', '2024-07-01', '2025-01-15', '2026-01-23', 1200, 6, 'https://plan-trabajo-link', TRUE, TRUE, 1),
-    ('PROPUESTA DE PRUEBA', 1, 4, 3, 4, 7, NULL, 0, 'RED', '2026-01-08', NULL, NULL, 1223, 2, 'https://otro-plan', TRUE, FALSE, 2);
+    ('MIGRACIÓN A CLOUD DE SISTEMA ERP', 3, 7, 3, NULL, 7, NULL, 60, 'YELLOW', '2024-07-01', '2025-01-15', '2026-01-23', 1200, 6, 'https://plan-trabajo-link', TRUE, TRUE, FALSE, TRUE, 1),
+    ('PROPUESTA DE PRUEBA', 1, 4, 3, 4, 7, NULL, 0, 'RED', '2026-01-08', NULL, NULL, 1223, 2, 'https://otro-plan', TRUE, FALSE, TRUE, FALSE, 2);
 
 -- Observaciones de Ejemplo
 INSERT INTO opportunity_observations (opportunity_id, text) VALUES

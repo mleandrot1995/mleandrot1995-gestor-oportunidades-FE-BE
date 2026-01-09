@@ -7,8 +7,6 @@ export interface Opportunity {
     status_name?: string;
     opportunity_type_id?: number;
     opportunity_type_name?: string;
-    document_type_id?: number;
-    document_type_name?: string;
     
     // Responsables
     manager_id: number;
@@ -25,6 +23,8 @@ export interface Opportunity {
     color_code: string;
     has_ia_proposal: boolean;
     has_prototype: boolean;
+    has_rfp: boolean;
+    has_anteproyecto: boolean;
     reason_motive?: string;
     motive_id?: number;
     motive_name?: string;

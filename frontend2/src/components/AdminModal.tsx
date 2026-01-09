@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit2, RotateCcw } from 'lucide-react';
-import { Account, OpportunityStatus, DocumentType, OpportunityType, Employee, JobRole, Motive } from '../types/types';
+import { X, Plus, Trash2, Edit2, RotateCcw, Menu, ChevronRight } from 'lucide-react';
+import { Account, OpportunityStatus, OpportunityType, Employee, JobRole, Motive } from '../types/types';
 import * as api from '../api';
 
 interface Props {
@@ -9,11 +9,10 @@ interface Props {
 }
 
 const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'accounts' | 'statuses' | 'docTypes' | 'oppTypes' | 'roles' | 'employees' | 'motives'>('accounts');
+    const [activeSubTab, setActiveSubTab] = useState<'accounts' | 'statuses' | 'oppTypes' | 'roles' | 'employees' | 'motives'>('accounts');
     
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [statuses, setStatuses] = useState<OpportunityStatus[]>([]);
-    const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
     const [oppTypes, setOppTypes] = useState<OpportunityType[]>([]);
     const [roles, setRoles] = useState<JobRole[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -24,10 +23,9 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     const fetchData = async () => {
         try {
-            const [acc, sta, doc, opp, rol, emp, mot] = await Promise.all([
+            const [acc, sta, opp, rol, emp, mot] = await Promise.all([
                 api.getAccounts(),
                 api.getStatuses(),
-                api.getDocTypes(),
                 api.getOppTypes(),
                 api.getJobRoles(),
                 api.getEmployees(),
@@ -35,7 +33,6 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             ]);
             setAccounts(acc);
             setStatuses(sta);
-            setDocTypes(doc);
             setOppTypes(opp);
             setRoles(rol);
             setEmployees(emp);
@@ -68,7 +65,6 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             const entityMap: any = {
                 accounts: 'accounts',
                 statuses: 'statuses',
-                docTypes: 'doc-types',
                 oppTypes: 'opp-types',
                 roles: 'job-roles',
                 employees: 'employees',
@@ -94,7 +90,6 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             const entityMap: any = {
                 accounts: 'accounts',
                 statuses: 'statuses',
-                docTypes: 'doc-types',
                 oppTypes: 'opp-types',
                 roles: 'job-roles',
                 employees: 'employees',
@@ -114,136 +109,160 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const tabClasses = (id: string) => `px-3 py-2 text-[12px] font-bold transition-all border-b-2 whitespace-nowrap ${activeSubTab === id ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'}`;
+    const navItemClasses = (id: string) => `w-full text-left px-4 py-3 text-[11px] font-black uppercase tracking-wider flex items-center justify-between transition-all ${activeSubTab === id ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`;
     const inputClasses = "bg-[#3f4b5b] border-none text-white text-[12px] rounded px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-400 w-full placeholder:text-gray-400 disabled:opacity-50";
-    const headerTh = "text-[#495057] font-black text-[11px] px-3 py-2 text-left bg-[#f8f9fa] uppercase tracking-wider";
+    const headerTh = "text-[#495057] font-black text-[10px] px-3 py-1.5 text-left bg-[#f8f9fa] uppercase tracking-wider";
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex overflow-hidden">
                 
-                {/* Tabs */}
-                <div className="flex border-b overflow-x-auto bg-white sticky top-0 z-10 scrollbar-hide">
-                    <button onClick={() => setActiveSubTab('accounts')} className={tabClasses('accounts')}>Cuentas</button>
-                    <button onClick={() => setActiveSubTab('statuses')} className={tabClasses('statuses')}>Estados</button>
-                    <button onClick={() => setActiveSubTab('docTypes')} className={tabClasses('docTypes')}>Documentos</button>
-                    <button onClick={() => setActiveSubTab('oppTypes')} className={tabClasses('oppTypes')}>Tipos ON</button>
-                    <button onClick={() => setActiveSubTab('roles')} className={tabClasses('roles')}>Puestos</button>
-                    <button onClick={() => setActiveSubTab('employees')} className={tabClasses('employees')}>Empleados</button>
-                    <button onClick={() => setActiveSubTab('motives')} className={tabClasses('motives')}>Motivos</button>
-                    <button onClick={onClose} className="ml-auto px-4 text-gray-400 hover:text-gray-600"><X size={20}/></button>
+                {/* Sidebar Navigation */}
+                <div className="w-48 bg-white border-r border-gray-100 flex flex-col">
+                    <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+                        <div className="bg-blue-600 p-1.5 rounded-lg text-white">
+                            <Menu size={16} />
+                        </div>
+                        <span className="font-black text-gray-800 text-xs uppercase tracking-tight">Configuración</span>
+                    </div>
+                    <nav className="flex-1 overflow-y-auto py-2">
+                        <button onClick={() => setActiveSubTab('accounts')} className={navItemClasses('accounts')}>Cuentas {activeSubTab === 'accounts' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('statuses')} className={navItemClasses('statuses')}>Estados {activeSubTab === 'statuses' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('oppTypes')} className={navItemClasses('oppTypes')}>Tipos ON {activeSubTab === 'oppTypes' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('roles')} className={navItemClasses('roles')}>Puestos {activeSubTab === 'roles' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('employees')} className={navItemClasses('employees')}>Empleados {activeSubTab === 'employees' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('motives')} className={navItemClasses('motives')}>Motivos {activeSubTab === 'motives' && <ChevronRight size={14}/>}</button>
+                    </nav>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                    
-                    {/* Nuevo Registro Section */}
-                    <div className="border rounded-lg p-4 bg-white shadow-sm border-gray-100 relative">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-[#333] font-black text-[13px] uppercase tracking-widest">
-                                {editingId ? 'Editar Registro' : 'Nuevo Registro'}
-                            </h3>
-                            {editingId && (
-                                <button onClick={resetForm} className="text-red-500 text-[10px] font-bold flex items-center gap-1 hover:underline uppercase">
-                                    <RotateCcw size={10}/> Cancelar Edición
-                                </button>
-                            )}
-                        </div>
-                        <div className="space-y-3">
-                            {activeSubTab === 'accounts' ? (
-                                <>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <input className={inputClasses} placeholder="Nombre Cliente" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
-                                        <input className={inputClasses} placeholder="Nombre Contacto" value={formData.contact_name || ''} onChange={e => setFormData({...formData, contact_name: e.target.value})} />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3 items-center">
-                                        <input className={inputClasses} placeholder="Mail Contacto" value={formData.contact_email || ''} onChange={e => setFormData({...formData, contact_email: e.target.value})} />
-                                        <div className="flex items-center gap-2">
-                                            <input type="checkbox" id="active-acc" className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
-                                            <label htmlFor="active-acc" className="text-[11px] font-bold text-gray-700 uppercase">Activo</label>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : activeSubTab === 'employees' ? (
-                                <div className="grid grid-cols-1 gap-3">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <input className={inputClasses} placeholder="Nombre Completo" value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} />
-                                        <select className={inputClasses} value={formData.role_id || ''} onChange={e => setFormData({...formData, role_id: parseInt(e.target.value)})}>
-                                            <option value="">Seleccionar Puesto...</option>
-                                            {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <input type="checkbox" id="active-emp" className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
-                                        <label htmlFor="active-emp" className="text-[11px] font-bold text-gray-700 uppercase">Activo</label>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-3">
-                                    <input className={inputClasses} placeholder="Nombre" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
-                                </div>
-                            )}
-                            
-                            <div className="flex gap-2">
-                                {editingId && (
-                                    <button onClick={resetForm} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-600 font-black py-2 rounded text-[11px] uppercase tracking-widest transition-all">
-                                        Cancelar
-                                    </button>
-                                )}
-                                <button onClick={handleSave} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded text-[11px] uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2">
-                                    {editingId ? <Edit2 size={14}/> : <Plus size={16}/>} 
-                                    {editingId ? 'Actualizar' : `Agregar ${activeSubTab === 'accounts' ? 'Cuenta' : 'Registro'}`}
-                                </button>
-                            </div>
-                        </div>
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col bg-gray-50/30">
+                    <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
+                        <h2 className="text-sm font-black text-gray-800 uppercase tracking-wide">
+                            Administrar {activeSubTab === 'accounts' ? 'Cuentas' : 
+                                       activeSubTab === 'statuses' ? 'Estados' : 
+                                       activeSubTab === 'oppTypes' ? 'Tipos de Oportunidad' : 
+                                       activeSubTab === 'roles' ? 'Puestos Laborales' : 
+                                       activeSubTab === 'motives' ? 'Motivos de Rechazo' : 'Empleados'}
+                        </h2>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={20}/></button>
                     </div>
 
-                    {/* Table Section */}
-                    <div className="border rounded-lg overflow-hidden bg-white shadow-sm border-gray-100">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr>
-                                    <th className={headerTh}>Nombre</th>
-                                    {activeSubTab === 'accounts' && <th className={headerTh}>Contacto</th>}
-                                    {activeSubTab === 'employees' && <th className={headerTh}>Puesto</th>}
-                                    {(activeSubTab === 'accounts' || activeSubTab === 'employees') && <th className={`${headerTh} text-center`}>Estado</th>}
-                                    <th className={`${headerTh} text-right w-20`}>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y text-[12px]">
-                                {(activeSubTab === 'accounts' ? accounts :
-                                  activeSubTab === 'statuses' ? statuses :
-                                  activeSubTab === 'docTypes' ? docTypes :
-                                  activeSubTab === 'oppTypes' ? oppTypes :
-                                  activeSubTab === 'roles' ? roles : 
-                                  activeSubTab === 'motives' ? motives : employees).map((item: any) => (
-                                    <tr key={item.id} className={`hover:bg-gray-50 transition-colors ${editingId === item.id ? 'bg-blue-50' : ''}`}>
-                                        <td className="px-3 py-2">
-                                            <div className="font-bold text-gray-800">{item.name || item.full_name}</div>
-                                        </td>
-                                        {activeSubTab === 'accounts' && (
-                                            <td className="px-3 py-2">
-                                                <div className="font-bold text-gray-700">{item.contact_name || '-'}</div>
-                                                {item.contact_email && <div className="text-[10px] text-gray-400 font-medium">{item.contact_email}</div>}
-                                            </td>
-                                        )}
-                                        {activeSubTab === 'employees' && <td className="px-3 py-2 text-gray-600">{item.role_name || '-'}</td>}
-                                        {(activeSubTab === 'accounts' || activeSubTab === 'employees') && (
-                                            <td className="px-3 py-2 text-center">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                    {item.is_active ? 'Sí' : 'No'}
-                                                </span>
-                                            </td>
-                                        )}
-                                        <td className="px-3 py-2 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => handleEdit(item)} className={`p-1 rounded transition-all ${editingId === item.id ? 'text-blue-700 bg-blue-100' : 'text-blue-500 hover:bg-blue-50'}`}><Edit2 size={14}/></button>
-                                                <button onClick={() => handleDelete(item.id)} className="p-1 text-red-400 hover:bg-red-50 rounded transition-all"><Trash2 size={14}/></button>
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        
+                        {/* Nuevo Registro Section */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                                <h3 className="text-gray-700 font-black text-[11px] uppercase tracking-widest">
+                                    {editingId ? 'Editar Registro' : 'Nuevo Registro'}
+                                </h3>
+                                {editingId && (
+                                    <button onClick={resetForm} className="text-red-500 text-[10px] font-bold flex items-center gap-1 hover:underline uppercase">
+                                        <RotateCcw size={10}/> Cancelar
+                                    </button>
+                                )}
+                            </div>
+                            <div className="p-4 space-y-3">
+                                {activeSubTab === 'accounts' ? (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input className={inputClasses} placeholder="Nombre Cliente" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                            <input className={inputClasses} placeholder="Nombre Contacto" value={formData.contact_name || ''} onChange={e => setFormData({...formData, contact_name: e.target.value})} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 items-center">
+                                            <input className={inputClasses} placeholder="Mail Contacto" value={formData.contact_email || ''} onChange={e => setFormData({...formData, contact_email: e.target.value})} />
+                                            <div className="flex items-center gap-2 pl-1">
+                                                <input type="checkbox" id="active-acc" className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
+                                                <label htmlFor="active-acc" className="text-[11px] font-bold text-gray-700 uppercase cursor-pointer select-none">Activo</label>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </>
+                                ) : activeSubTab === 'employees' ? (
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input className={inputClasses} placeholder="Nombre Completo" value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} />
+                                            <select className={inputClasses} value={formData.role_id || ''} onChange={e => setFormData({...formData, role_id: parseInt(e.target.value)})}>
+                                                <option value="">Seleccionar Puesto...</option>
+                                                {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center gap-2 pl-1">
+                                            <input type="checkbox" id="active-emp" className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
+                                            <label htmlFor="active-emp" className="text-[11px] font-bold text-gray-700 uppercase cursor-pointer select-none">Activo</label>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1">
+                                        <input className={inputClasses} placeholder="Nombre" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                    </div>
+                                )}
+                                
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-black py-2 px-6 rounded-lg text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2">
+                                        {editingId ? <Edit2 size={12}/> : <Plus size={14}/>} 
+                                        {editingId ? 'Actualizar' : 'Agregar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Table Section */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th className={headerTh}>Nombre</th>
+                                            {activeSubTab === 'accounts' && <th className={headerTh}>Contacto</th>}
+                                            {activeSubTab === 'employees' && <th className={headerTh}>Puesto</th>}
+                                            {(activeSubTab === 'accounts' || activeSubTab === 'employees') && <th className={`${headerTh} text-center`}>Estado</th>}
+                                            <th className={`${headerTh} text-right w-20`}>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 text-[11px]">
+                                        {(activeSubTab === 'accounts' ? accounts :
+                                          activeSubTab === 'statuses' ? statuses :
+                                          activeSubTab === 'oppTypes' ? oppTypes :
+                                          activeSubTab === 'roles' ? roles : 
+                                          activeSubTab === 'motives' ? motives : employees).map((item: any) => (
+                                            <tr key={item.id} className={`hover:bg-blue-50/30 transition-colors ${editingId === item.id ? 'bg-blue-50' : ''}`}>
+                                                <td className="px-3 py-2">
+                                                    <div className="font-bold text-gray-800">{item.name || item.full_name}</div>
+                                                </td>
+                                                {activeSubTab === 'accounts' && (
+                                                    <td className="px-3 py-2">
+                                                        <div className="font-bold text-gray-700">{item.contact_name || '-'}</div>
+                                                        {item.contact_email && <div className="text-[9px] text-gray-400 font-medium">{item.contact_email}</div>}
+                                                    </td>
+                                                )}
+                                                {activeSubTab === 'employees' && <td className="px-3 py-2 text-gray-600 font-medium">{item.role_name || '-'}</td>}
+                                                {(activeSubTab === 'accounts' || activeSubTab === 'employees') && (
+                                                    <td className="px-3 py-2 text-center">
+                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {item.is_active ? 'Sí' : 'No'}
+                                                        </span>
+                                                    </td>
+                                                )}
+                                                <td className="px-3 py-2 text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <button onClick={() => handleEdit(item)} className={`p-1.5 rounded-md transition-all ${editingId === item.id ? 'text-blue-700 bg-blue-100' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}><Edit2 size={12}/></button>
+                                                        <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"><Trash2 size={12}/></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {((activeSubTab === 'accounts' && accounts.length === 0) || 
+                                          (activeSubTab === 'statuses' && statuses.length === 0)) && (
+                                            <tr>
+                                                <td colSpan={5} className="px-4 py-8 text-center text-gray-400 italic text-xs">
+                                                    No hay registros disponibles.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
