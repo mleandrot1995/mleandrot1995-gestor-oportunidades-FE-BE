@@ -5,6 +5,7 @@ import AdminModal from './components/AdminModal';
 import * as api from './api';
 import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from './types/types';
 import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft, Filter, X } from 'lucide-react';
+import * as XLSX from 'xlsx-js-style';
 
 function App() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -169,7 +170,7 @@ function App() {
   const sortOpportunities = (opps: Opportunity[]) => {
       if (activeTab !== 'ON') return opps;
 
-      const statusOrder = ["EVALUACIÓN", "ELABORACIÓN", "ESPERANDO RESPUESTA", "REASIGNADO A CAPACITY", "DESESTIMADA", "GANADA", "PERDIDA"];
+      const statusOrder = ["EVALUACIÓN", "ELABORACIÓN", "ESPERANDO", "RESPUESTA", "REASIGNADO A CAPACITY", "DESESTIMADA", "GANADA", "PERDIDA"];
 
       return [...opps].sort((a, b) => {
           // 2.1: Registros sin datos cargados
@@ -185,8 +186,18 @@ function App() {
           if (!aMissingStatus && bMissingStatus) return 1;
 
           // 2.3: Por orden de estado
-          const aStatusIdx = statusOrder.findIndex(s => (a.status_name || "").toUpperCase().includes(s));
-          const bStatusIdx = statusOrder.findIndex(s => (b.status_name || "").toUpperCase().includes(s));
+          const aStatusName = (a.status_name || "").toUpperCase();
+          const bStatusName = (b.status_name || "").toUpperCase();
+
+          const getStatusIndex = (name: string) => {
+             for (let i = 0; i < statusOrder.length; i++) {
+                 if (name.includes(statusOrder[i])) return i;
+             }
+             return -1;
+          }
+
+          const aStatusIdx = getStatusIndex(aStatusName);
+          const bStatusIdx = getStatusIndex(bStatusName);
           
           if (aStatusIdx !== -1 && bStatusIdx !== -1) {
               if (aStatusIdx !== bStatusIdx) return aStatusIdx - bStatusIdx;
@@ -233,6 +244,147 @@ function App() {
   };
 
   const filterSelectClass = "bg-white border border-gray-200 rounded px-2 py-1 text-[10px] font-bold outline-none focus:border-blue-400 min-w-[100px]";
+
+  const exportDC = () => {
+    // Definimos los encabezados
+    const headers = [
+        "ID", "%", "Gerente Comercial", "Observaciones", 
+        "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", 
+        "Entregar al Gerente Comercial", "Motivo"
+    ];
+
+    // Mapeamos los datos con formato básico
+    const data = filteredOpps.map(opp => {
+        const motive = motives.find(m => m.id === opp.motive_id);
+        
+        return {
+            "ID": opp.id,
+            "%": opp.percentage,
+            "Gerente Comercial": opp.manager_name,
+            "Observaciones": opp.last_observation,
+            "Nombre de la cuenta": opp.account_name,
+            "Nombre de la oportunidad": opp.name,
+            "Estado": opp.status_name,
+            "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '',
+            "Motivo": motive ? motive.name : '',
+        };
+    });
+
+    // Crear la hoja de trabajo
+    const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+
+    // Definir los colores hexadecimales según el código de color
+    const getHexColor = (colorCode?: string) => {
+        switch (colorCode) {
+            case 'RED': return 'FFFF0000'; // Rojo
+            case 'YELLOW': return 'FFFFFF00'; // Amarillo
+            case 'GREEN': return 'FF00FF00'; // Verde
+            default: return 'FFFFFFFF'; // Blanco por defecto
+        }
+    };
+
+    // Aplicar estilos a las filas de datos
+    // La fila 0 son los headers, los datos empiezan en la fila 1 (índice 0 de nuestro array data)
+    // En la hoja excel, headers es fila 0 (índice 0), datos fila 1 (índice 1) en adelante.
+    // Usamos range para iterar sobre las celdas
+    
+    // Obtener el rango de la hoja
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+
+    // Estilo para el encabezado
+    const headerStyle = {
+        fill: { fgColor: { rgb: "FFFFE0B2" } }, // Color naranja claro similar a la captura
+        font: { bold: true, sz: 10 },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        }
+    };
+
+    // Estilo base para celdas normales
+    const baseCellStyle = {
+        font: { sz: 10 },
+        alignment: { vertical: "center", wrapText: true },
+        border: {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        }
+    };
+    
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        // Estilos para encabezado (fila 0)
+        if (R === 0) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                ws[cellRef].s = headerStyle;
+            }
+            continue; 
+        }
+        
+        // Obtener el objeto de datos correspondiente a esta fila (R-1 porque data empieza en 0)
+        const rowData = filteredOpps[R - 1]; // Usamos filteredOpps directamente para obtener el color
+        if (!rowData) continue;
+
+        const colorHex = getHexColor(rowData.color_code);
+        
+        // Columnas a colorear: Gerente Comercial (C), Observaciones (D), Nombre de la cuenta (E)
+        // Indices (0-based): C=2, D=3, E=4
+        const colsToColor = [2, 3, 4];
+
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+            if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' }; // Crear celda vacía si no existe
+            
+            // Estilo base
+            ws[cellRef].s = { ...baseCellStyle };
+
+            // Si es una columna para colorear, aplicamos el fill
+            if (colsToColor.includes(C)) {
+                 ws[cellRef].s.fill = {
+                        fgColor: { rgb: colorHex }
+                 };
+            }
+        }
+    }
+
+    // Ajustar anchos de columna (aproximados)
+    ws['!cols'] = [
+        { wch: 5 },  // ID
+        { wch: 5 },  // %
+        { wch: 20 }, // Gerente
+        { wch: 40 }, // Observaciones
+        { wch: 25 }, // Cuenta
+        { wch: 40 }, // Oportunidad
+        { wch: 15 }, // Estado
+        { wch: 15 }, // Entregar Gte
+        { wch: 20 }  // Motivo
+    ];
+    
+    // Ocultar la columna auxiliar _color_code si se agregó al sheet (json_to_sheet podría agregarla si no especificamos headers o si agregamos todos los campos)
+    // Como especificamos 'header', json_to_sheet solo incluye esas columnas. _color_code no estará en el excel visible.
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "DC Export");
+    XLSX.writeFile(wb, "export_dc.xlsx");
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    } catch { return ''; }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-xs text-gray-800">
@@ -352,7 +504,7 @@ function App() {
                     <div className="flex gap-1">
                         <button className="p-1.5 bg-green-50 text-green-700 border border-green-100 rounded hover:bg-green-100" title="Exportar Pablo"><Download size={12}/></button>
                         <button className="p-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded hover:bg-blue-100" title="Exportar JP"><Download size={12}/></button>
-                        <button className="p-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded hover:bg-orange-100" title="Exportar DC"><Download size={12}/></button>
+                        <button onClick={exportDC} className="p-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded hover:bg-orange-100" title="Exportar DC"><Download size={12}/></button>
                     </div>
                 </div>
             )}

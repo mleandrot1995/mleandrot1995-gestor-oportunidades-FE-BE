@@ -10,7 +10,7 @@ export default defineConfig({
       usePolling: true,
     },
     hmr: {
-      clientPort: 5173
+      clientPort: 443
     },
     proxy: {
       '/api': {
@@ -19,5 +19,8 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  optimizeDeps: {
+    include: ['xlsx-js-style']
   }
 });

@@ -372,22 +372,22 @@ const OpportunityGrid: React.FC<Props> = ({
 
                             <td className={`${cellClass} py-1`}>
                                 <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
-                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Gte:</span> 
+                                    <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Gte:</span> 
                                     <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                     
-                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1 text-nowrap">Aprob:</span> 
+                                    <span className="font-black text-gray-500 uppercase text-[9px] pt-1 text-nowrap">Aprob:</span> 
                                     <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
-                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Neg:</span> 
+                                    <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Neg:</span> 
                                     <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
-                                    <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Tec:</span> 
+                                    <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Tec:</span> 
                                     <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
