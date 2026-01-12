@@ -287,6 +287,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                         defaultValue={opp.name} 
                                         onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
                                         disabled={isReadOnlyView} 
+                                        style={{ fontSize: '12px' }}
                                     />
                                     <div className="flex gap-2 px-1 mt-1 flex-wrap">
                                         <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_ia_proposal ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
@@ -315,10 +316,11 @@ const OpportunityGrid: React.FC<Props> = ({
                             
                             <td className={`${cellClass} max-w-xs py-1`}>
                                 <textarea 
-                                    className={`${inlineInput} italic text-[11px] leading-tight resize-none h-20 font-medium text-gray-700 p-0.5 border border-gray-200 rounded focus:border-blue-300`} 
+                                    className={`${inlineInput} text-[14px] leading-tight resize-none h-20 font-medium text-gray-700 p-0.5 border border-gray-200 rounded focus:border-blue-300`} 
                                     defaultValue={opp.last_observation || ''} 
                                     onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} 
                                     disabled={isReadOnlyView} 
+                                    style={{ fontSize: '11px' }}
                                 />
                             </td>
                             
@@ -373,22 +375,22 @@ const OpportunityGrid: React.FC<Props> = ({
                             <td className={`${cellClass} py-1`}>
                                 <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
                                     <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Gte:</span> 
-                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
                                         {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                     
                                     <span className="font-black text-gray-500 uppercase text-[9px] pt-1 text-nowrap">Aprob:</span> 
-                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
                                         <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
                                     <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Neg:</span> 
-                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
                                         <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
                                     <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Tec:</span> 
-                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
                                         <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                 </div>
