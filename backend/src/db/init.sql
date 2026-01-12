@@ -554,6 +554,70 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 SELECT setval('opportunities_id_seq', 200, true)
 
 -- Observaciones de Ejemplo
-INSERT INTO opportunity_observations (opportunity_id, text) VALUES
-(1, 'Se requiere validar compatibilidad con base de datos Oracle antigua.'),
-(2, 'Nueva observación');
+TRUNCATE TABLE opportunity_observations RESTART IDENTITY CASCADE;
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (194,'El 6/1 el  cliente no se presentó a la reunión. Se reagenda');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (190,'Se reagendo reunión para 9/1');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (192,'El cliente solicita una POC para el 1er Q 2026');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (179,'Agendada la reunión de entendimiento, el cliente indico que se requerirán varias reuniones hasta cerrar el alcance.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (199,'Se evaluó realizar  este proyecto con los Analistas de Negocio de preventa.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (196,'Se planifica reunión de entendimiento con usuarios para que cierren alcance durante la primer semana de enero');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (200,'Se elabora una propuesta de Ante - Proyecto');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (197,'Se aguardan respuestas del cliente, a las consultas técnicas.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (195,'Se presentó la propuesta comercial el 2/1');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (193,'Se entrega la propuesta técnica y entramos en licitación. Se hace seguimiento comercial hasta el 19/01');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (184,'Se presenta propuesta técnico y comercial 11/12 y El cliente informa que pone standby la inversión hasta el 1/4');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (188,'Se hizo la reunión con Pablo Salazar se espera la OC  y la entrega formal del código fuente. Posible fecha de adjudicación el 20/01');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (154,'En negociación final. Se aguarda la OC, el cliente confirmo que avanza con nosotros a partir de febrero cuando llegue la OC.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (167,'EL alcance de la propuesta esta en negociación con el área comercial .
+Esto pasa al DC y se manejará como cambio de alcance ya que las funcionalidades incluidas en la propuesta del MVP3 media y baja no se desarrollaran en esta etapa quedando solo aprobado:
+1.- INTEGRACION CON ML NET (Productores y SPD)
+2.- REPORTE CON A SPD.
+3.- ADMINISTRACION COMISIONES: CONSULTAS x PERFIL');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (180,'Queda a la espera de cerrar temas comerciales previos. Proyecto pausado por el área comercial');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (198,'Se desestima por que el partner no puede brindar el servicio requerido');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (181,'Se entregó la propuesta técnica. Se hace seguimiento y durante enero el cliente NO responde');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (185,'EL 10/12 se renvió propuesta comercial ajustada y se espera respuesta del cliente. Se esta haciendo el seguimiento comercial ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (176,'El cliente solicitó extender las capacitaciones una semana mas. Se espera la OC.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (191,'El cliente agradece el compromiso pero decidió realizar el desarrollo con recursos internos. ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (177,'EL cliente holdea la oportunidad hasta nuevo aviso.
+Propuesta enviada el 17/10. estamos a la espera de novedades se hace seguimiento durante noviembre vía Portal. Hasta el 19/12 sin adjudicación en el portal de ICBC');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (189,'Por el momento queda desestimada por el cliente ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (187,'Desestima por la Dirección de CFOTech');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (186,'Carlos Giorgi solicita no presentarnos por falta de respuesta de GCBA y el corto plazo de presentación');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (183,'No se pudo cotizar el servicio de Software Factory para SAP (u0% del servicio) porque nuestro partner de SAP Stratesys evaluo la propuesta y resolvio que np ódian brindar el servicio requerido en el pliego.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (182,'No pudimos presentarnos al  RFP, no cumplimos con los requisitos que son excluyentes y requeridos para dar servicio sobre la suite de herramientas de CA Broadcom');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (178,'Preventa y el COE define que no nos podemos presentar porque la ON requiere cotizar Licencias y Capacitaciones de un producto  que no comercializamos y del cual no tenemos conocimiento dentro de CFOTech ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (175,'Propuesta presentada estamos a la espera de la resolución del cliente. Se cotizaron perfiles y hasta que no se adjudique no sabemos que cantidad de personas va en cada uno.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (174,'Se esta realizando seguimiento a la oportunidad, hasta el momento sin respuesta.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (173,'El cliente no cuenta con presupuesto para esta iniciativa');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (172,'El cliente aprobo avanzar con el alcance de prioridad Alta MVP3.1. Se hace el traspaso de estos temas');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (171,'Esperando reunión con el cliente');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (170,'El cliente aprobó el presupuesto y se espera contar con el equipo completo la primer semana de diciembre. ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (169,'El cliente informá que cambiará el alcance del proyecto particionándolo. Estamos a la espera de la nueva documentación. Se hace seguimiento durante noviembre');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (168,'Se presenta una propuesta de Capacity servicie por una célula de QA el cliente desestima por falta de presupuesto');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (166,'El cliente analiza propuesta y evalúa costos con el directorio. El cliente informa que han suspendido las inversiones en nuevos proyectos.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (165,'El cliente desetima la ON ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (164,'Pendiente de envío ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (163,'Se ofrecerá un capacity acorde a su presupuesto y se ajustará la propuesta.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (162,'La propuesta técnica estaba acorde pero se perdió por horas y precio');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (161,' este proyecto sea adjudjudicó a un conocido que trabaja de forma independiente.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (160,'Aun el cliente no adjudicó pero quedará para el año que viene');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (159,'Se redujo el alcance , se envió nueva propuesta y se aguarda respuesta del cliente');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (157,'Gabriel Gil informa que avanzaran con una solución entalada.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (156,'Cliente la pospone para el 2026');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (155,'Llego la orden de compra la próxima semana se hace el traspaso al DC');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (152,'Se define en septiembre el cliente debe cerrar tema inversión ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (151,'El cliente desestimo la propuesta por costo y solicitó cotizar un equipo diferente, se cotizó un capacity service y Ocasa responde la próxima semana');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (150,'El cliente respondió que esta en revisión debido a otros proyectos con mayor prioridad se definirá durante Octubre');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (149,'El cliente informa que definieron no avanzar con esta inversión durante este año');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (148,'En proceso de negociación con compras a la espera de la OC. Quedamos elegidos por la propuesta técnica y entro en negociación comercial.  El cliente informa que no cuenta con presupuesta para iniciar el proyecto este año');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (147,'Adjudicaron a un proveedor ya conocido y cuyo precio fue menor');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (146,'Excede el presupuesto del cliente ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (145,'El cliente queda a la espera de cerrar las definiciones de la nueva oportunidad complementaria.  El cliente informa que han suspendido las inversiones en nuevos proyectos.');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (140,'El cliente informó que no avanzan con estos desarrollos se pidio reunión para enteder la razon ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (136,'Entro la OC se hizo el trasapado al equipo del DC');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (135,'Se define primer semana agosto, es probable que se adjudique a otro proveedor');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (129,'La propuesta fue de licencias por automatización y no agrega recursos se  ejecuta con el equipo actual. Por temas de presupuesto se posterga hasta el año que viene ');
+INSERT INTO opportunity_observations (opportunity_id,text) VALUES (122,'Se da de baja porque el cliente aun no pudo conseguir presupuesto para este año')
+ON CONFLICT (id) DO UPDATE SET opportunity_id = EXCLUDED.opportunity_id;
+SELECT setval('opportunity_observations_id_seq', 59, true)
