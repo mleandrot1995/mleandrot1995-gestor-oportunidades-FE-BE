@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Motive } from '../types/types';
+import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from '../types/types';
 import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File } from 'lucide-react';
 import * as api from '../api';
 
@@ -283,7 +283,7 @@ const OpportunityGrid: React.FC<Props> = ({
                             <td className={`${cellClass} py-1`}>
                                 <div className="flex flex-col gap-1">
                                     <textarea 
-                                        className={`${inlineInput} uppercase text-[11px] resize-none h-12 overflow-y-auto leading-tight p-0.5`} 
+                                        className={`${inlineInput} uppercase text-[9px] resize-none h-12 overflow-y-auto leading-tight p-0.5`} 
                                         defaultValue={opp.name} 
                                         onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
                                         disabled={isReadOnlyView} 
@@ -373,22 +373,22 @@ const OpportunityGrid: React.FC<Props> = ({
                             <td className={`${cellClass} py-1`}>
                                 <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Gte:</span> 
-                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                     
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1 text-nowrap">Aprob:</span> 
-                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Neg:</span> 
-                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
 
                                     <span className="font-black text-gray-500 uppercase text-[10px] pt-1">Tec:</span> 
-                                    <select className={`${inlineInput} text-[12px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                    <select className={`${inlineInput} text-[9px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
                                     </select>
                                 </div>

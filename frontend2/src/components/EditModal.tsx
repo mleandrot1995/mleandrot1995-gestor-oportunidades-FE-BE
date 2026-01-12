@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, MessageSquare, Plus, Calendar, Clock, Users, Info, FileText, CheckSquare, Square, Link as LinkIcon, Sparkles, Layout, AlertCircle, FileCheck, File } from 'lucide-react';
-import { Opportunity, Account, Employee, OpportunityStatus, DocumentType, OpportunityType, Observation, Motive } from '../types/types';
+import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Observation, Motive } from '../types/types';
 import * as api from '../api';
 
 interface Props {
