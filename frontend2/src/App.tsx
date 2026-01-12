@@ -12,7 +12,12 @@ function App() {
   const [activeTab, setActiveTab] = useState<'ON' | 'ON-OUT' | 'TRASH'>('ON');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Filters
+  // Filters (Ahora manejados internamente en OpportunityGrid, excepto si se requiere lógica global)
+  // Pero para mantener consistencia con el requerimiento de moverlos a la cabecera de la grilla,
+  // pasaremos estos estados como props a OpportunityGrid o haremos que OpportunityGrid maneje su propio filtrado.
+  // Dado que la arquitectura actual filtra en App.tsx antes de pasar la data, mantendremos el estado aquí
+  // pero la UI de los filtros se moverá a OpportunityGrid.
+
   const [filterAccount, setFilterAccount] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterManager, setFilterManager] = useState<string>('');
@@ -110,15 +115,11 @@ function App() {
       if (!window.confirm("¿Desea mover registros a históricos según las reglas de negocio?")) return;
       
       const toMove = opportunities.filter(o => {
-          // Rule 3.1: Color Rojo y k-orden (k_red_index) >= 3
-          
           const isRed = o.color_code === 'RED';
-          // Asumimos que "k-orden" se refiere al índice K-Rojo visible en la UI.
           const highKRedIndex = (o.k_red_index || 0) >= 3; 
 
           if (isRed && highKRedIndex) return true;
 
-          // Rule 3.2: Estado contiene "Ganada" o "Perdida"
           const status = (o.status_name || "").toUpperCase();
           if (status.includes("GANADA") || status.includes("PERDIDA")) return true;
 
@@ -173,19 +174,16 @@ function App() {
       const statusOrder = ["EVALUACIÓN", "ELABORACIÓN", "ESPERANDO", "RESPUESTA", "REASIGNADO A CAPACITY", "DESESTIMADA", "GANADA", "PERDIDA"];
 
       return [...opps].sort((a, b) => {
-          // 2.1: Registros sin datos cargados
           const aEmpty = !a.name && !a.account_id;
           const bEmpty = !b.name && !b.account_id;
           if (aEmpty && !bEmpty) return -1;
           if (!aEmpty && bEmpty) return 1;
 
-          // 2.2: Name cargado, Gerente cargado, pero Estado vacío
           const aMissingStatus = a.name && a.manager_id && !a.status_id;
           const bMissingStatus = b.name && b.manager_id && !b.status_id;
           if (aMissingStatus && !bMissingStatus) return -1;
           if (!aMissingStatus && bMissingStatus) return 1;
 
-          // 2.3: Por orden de estado
           const aStatusName = (a.status_name || "").toUpperCase();
           const bStatusName = (b.status_name || "").toUpperCase();
 
@@ -204,11 +202,9 @@ function App() {
           } else if (aStatusIdx !== -1) return -1;
           else if (bStatusIdx !== -1) return 1;
 
-          // 2.4: K-rojo descendente
           const kDiff = (b.k_red_index || 0) - (a.k_red_index || 0);
           if (kDiff !== 0) return kDiff;
 
-          // 2.5: ID descendente
           return b.id - a.id;
       });
   };
@@ -242,8 +238,6 @@ function App() {
     setFilterTecnico('');
     setFilterKRed('');
   };
-
-  const filterSelectClass = "bg-white border border-gray-200 rounded px-2 py-1 text-[10px] font-bold outline-none focus:border-blue-400 min-w-[100px]";
 
   const exportDC = () => {
     const headers = [
@@ -279,28 +273,17 @@ function App() {
     };
 
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
-
     const headerStyle = {
         fill: { fgColor: { rgb: "FFFFE0B2" } },
         font: { bold: true, sz: 10 },
         alignment: { horizontal: "center", vertical: "center", wrapText: true },
-        border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        }
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
     };
 
     const baseCellStyle = {
         font: { sz: 10 },
         alignment: { vertical: "center", wrapText: true },
-        border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        }
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
     };
     
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -326,84 +309,42 @@ function App() {
             ws[cellRef].s = { ...baseCellStyle };
 
             if (colsToColor.includes(C)) {
-                 ws[cellRef].s.fill = {
-                        fgColor: { rgb: colorHex }
-                 };
+                 ws[cellRef].s.fill = { fgColor: { rgb: colorHex } };
             }
         }
     }
-
-    ws['!cols'] = [
-        { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
-    ];
-    
+    ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DC Export");
     XLSX.writeFile(wb, "export_dc.xlsx");
   };
 
   const exportPablo = () => {
-    // Filtrar solo filas VERDES y AMARILLAS
     const filteredForPablo = filteredOpps.filter(opp => 
         opp.color_code === 'GREEN' || opp.color_code === 'YELLOW'
     );
-
-    const headers = [
-        "ID", "%", "Gerente Comercial", "Observaciones", 
-        "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", 
-        "Entregar al Gerente Comercial", "Motivo"
-    ];
-
+    const headers = ["ID", "%", "Gerente Comercial", "Observaciones", "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", "Entregar al Gerente Comercial", "Motivo"];
     const data = filteredForPablo.map(opp => {
         const motive = motives.find(m => m.id === opp.motive_id);
         return {
-            "ID": opp.id,
-            "%": opp.percentage,
-            "Gerente Comercial": opp.manager_name,
-            "Observaciones": opp.last_observation,
-            "Nombre de la cuenta": opp.account_name,
-            "Nombre de la oportunidad": opp.name,
-            "Estado": opp.status_name,
-            "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '',
-            "Motivo": motive ? motive.name : '',
+            "ID": opp.id, "%": opp.percentage, "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
+            "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
+            "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '', "Motivo": motive ? motive.name : '',
         };
     });
-
     const ws = XLSX.utils.json_to_sheet(data, { header: headers });
-
     const getHexColor = (colorCode?: string) => {
-        switch (colorCode) {
-            case 'YELLOW': return 'FFFFFF00'; 
-            case 'GREEN': return 'FF00FF00'; 
-            default: return 'FFFFFFFF'; 
-        }
+        switch (colorCode) { case 'YELLOW': return 'FFFFFF00'; case 'GREEN': return 'FF00FF00'; default: return 'FFFFFFFF'; }
     };
-
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
-
     const headerStyle = {
-        fill: { fgColor: { rgb: "FFFFE0B2" } },
-        font: { bold: true, sz: 10 },
-        alignment: { horizontal: "center", vertical: "center", wrapText: true },
-        border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        }
+        fill: { fgColor: { rgb: "FFFFE0B2" } }, font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
     };
-
     const baseCellStyle = {
-        font: { sz: 10 },
-        alignment: { vertical: "center", wrapText: true },
-        border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        }
+        font: { sz: 10 }, alignment: { vertical: "center", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
     };
-    
     for (let R = range.s.r; R <= range.e.r; ++R) {
         if (R === 0) {
             for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -413,34 +354,88 @@ function App() {
             }
             continue; 
         }
-        
-        const rowData = filteredForPablo[R - 1]; 
-        if (!rowData) continue;
-
+        const rowData = filteredForPablo[R - 1]; if (!rowData) continue;
         const colorHex = getHexColor(rowData.color_code);
-        const colsToColor = [2, 3, 4]; // Gerente, Observaciones, Cuenta
-
+        const colsToColor = [2, 3, 4];
         for (let C = range.s.c; C <= range.e.c; ++C) {
             const cellRef = XLSX.utils.encode_cell({c: C, r: R});
             if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-            
             ws[cellRef].s = { ...baseCellStyle };
-
-            if (colsToColor.includes(C)) {
-                 ws[cellRef].s.fill = {
-                        fgColor: { rgb: colorHex }
-                 };
-            }
+            if (colsToColor.includes(C)) { ws[cellRef].s.fill = { fgColor: { rgb: colorHex } }; }
         }
     }
-
-    ws['!cols'] = [
-        { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
-    ];
-    
+    ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pablo Export");
     XLSX.writeFile(wb, "export_pablo.xlsx");
+  };
+
+  const exportJP = async () => {
+    const allOpps = await api.getOpportunities('ALL');
+    const headers = [
+        "ID", "%", "Nombre de la Cuenta", "Nombre Oportunidad", "Gerente Comercial",
+        "Equipo de Preventa-COE", "Fecha-Inicio (Comercial pasa a Preventa)",
+        "Fecha-Enfrendimiento (Primer reunión con Preventa)", "Fecha-Alcance (Cierre del alcance)",
+        "Fecha-COE (Aprobacion Coe)", "Fecha-Entrega (Fecha envío PP al comercial)",
+        "Días (Fecha-Inicio y Fecha-COE)", "Días (Fecha-Inicio y Fecha-Entrega)",
+        "Estado Final", "Motivo"
+    ];
+    const diffDays = (date1?: string, date2?: string) => {
+        if (!date1 || !date2) return '';
+        const d1 = new Date(date1); const d2 = new Date(date2);
+        if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return '';
+        const diff = d2.getTime() - d1.getTime();
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    };
+    const data = allOpps.map(opp => {
+        const eqPreventa = [opp.dc_name, opp.neg_name].filter(Boolean).join(' - ');
+        return {
+            "ID": opp.id, "%": opp.percentage, "Nombre de la Cuenta": opp.account_name, "Nombre Oportunidad": opp.name,
+            "Gerente Comercial": opp.manager_name, "Equipo de Preventa-COE": eqPreventa || 'N/A',
+            "Fecha-Inicio (Comercial pasa a Preventa)": formatDate(opp.start_date),
+            "Fecha-Enfrendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
+            "Fecha-Alcance (Cierre del alcance)": formatDate(opp.scope_date),
+            "Fecha-COE (Aprobacion Coe)": formatDate(opp.coe_date),
+            "Fecha-Entrega (Fecha envío PP al comercial)": formatDate(opp.delivery_date),
+            "Días (Fecha-Inicio y Fecha-COE)": diffDays(opp.start_date, opp.coe_date),
+            "Días (Fecha-Inicio y Fecha-Entrega)": diffDays(opp.start_date, opp.delivery_date),
+            "Estado Final": opp.status_name, "Motivo": opp.motive_name,
+        };
+    });
+    const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+    const headerStyle = {
+        fill: { fgColor: { rgb: "B0E0E6" } }, font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+    };
+    const baseCellStyle = {
+        font: { sz: 10 }, alignment: { vertical: "center", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+    };
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        if (R === 0) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                ws[cellRef].s = headerStyle;
+            }
+            continue; 
+        }
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+            if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+            ws[cellRef].s = { ...baseCellStyle };
+            if (C === 13) { ws[cellRef].s.fill = { fgColor: { rgb: "C6EFCE" } }; } 
+            if (C === 14) { ws[cellRef].s.fill = { fgColor: { rgb: "C6EFCE" } }; }
+        }
+    }
+    ws['!cols'] = [
+        { wch: 5 }, { wch: 5 }, { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 30 }, 
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "JP Export");
+    XLSX.writeFile(wb, "export_jp.xlsx");
   };
 
   const formatDate = (dateString?: string) => {
@@ -507,76 +502,21 @@ function App() {
                 />
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide flex-1">
-                <div className="flex items-center gap-1 text-[9px] font-black text-gray-400 uppercase tracking-tighter mr-1">
-                    <Filter size={12}/> Filtros:
-                </div>
-                
-                <select className={filterSelectClass} value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
-                    <option value="">Cuenta (Todas)</option>
-                    {Array.from(new Set(opportunities.map(o => o.account_name).filter(Boolean))).sort().map(name => (
-                        <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-
-                <select className={filterSelectClass} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                    <option value="">Estado (Todos)</option>
-                    {Array.from(new Set(opportunities.map(o => o.status_name).filter(Boolean))).sort().map(name => (
-                        <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-
-                <select className={filterSelectClass} value={filterManager} onChange={e => setFilterManager(e.target.value)}>
-                    <option value="">Gte (Todos)</option>
-                    {Array.from(new Set(opportunities.map(o => o.manager_name).filter(Boolean))).sort().map(name => (
-                        <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-
-                <select className={filterSelectClass} value={filterAprobador} onChange={e => setFilterAprobador(e.target.value)}>
-                    <option value="">Aprob (Todos)</option>
-                    {Array.from(new Set(opportunities.map(o => o.dc_name).filter(Boolean))).sort().map(name => (
-                        <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-
-                <select className={filterSelectClass} value={filterNegocio} onChange={e => setFilterNegocio(e.target.value)}>
-                    <option value="">Neg (Todos)</option>
-                    {Array.from(new Set(opportunities.map(o => o.neg_name).filter(Boolean))).sort().map(name => (
-                        <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-
-                <select className={filterSelectClass} value={filterTecnico} onChange={e => setFilterTecnico(e.target.value)}>
-                    <option value="">Tec (Todos)</option>
-                    {Array.from(new Set(opportunities.map(o => o.tec_name).filter(Boolean))).sort().map(name => (
-                        <option key={name} value={name}>{name}</option>
-                    ))}
-                </select>
-
-                <select className={filterSelectClass} value={filterKRed} onChange={e => setFilterKRed(e.target.value)}>
-                    <option value="">K-Rojo (Todos)</option>
-                    {Array.from(new Set(opportunities.map(o => String(o.k_red_index)))) .sort((a,b) => Number(a)-Number(b)).map(val => (
-                        <option key={val} value={val}>{val}</option>
-                    ))}
-                </select>
-
-                {(filterAccount || filterStatus || filterManager || filterAprobador || filterNegocio || filterTecnico || filterKRed) && (
-                    <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 border border-red-100 rounded text-[9px] font-black uppercase hover:bg-red-100 transition-all shadow-sm whitespace-nowrap">
-                        <X size={12}/> <span>Limpiar</span>
-                    </button>
+            <div className="flex items-center gap-1.5 ml-auto">
+                 {activeTab !== 'TRASH' && (
+                    <div className="flex gap-1">
+                        <button onClick={exportPablo} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 border border-green-100 rounded hover:bg-green-100 text-[10px] font-bold" title="Exportar Pablo">
+                            <Download size={12}/> <span>PABLO</span>
+                        </button>
+                        <button onClick={exportJP} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded hover:bg-blue-100 text-[10px] font-bold" title="Exportar JP">
+                            <Download size={12}/> <span>JP</span>
+                        </button>
+                        <button onClick={exportDC} className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded hover:bg-orange-100 text-[10px] font-bold" title="Exportar DC">
+                            <Download size={12}/> <span>DC</span>
+                        </button>
+                    </div>
                 )}
             </div>
-            
-            {activeTab !== 'TRASH' && (
-                <div className="flex items-center space-x-1 ml-auto">
-                    <div className="flex gap-1">
-                        <button onClick={exportPablo} className="p-1.5 bg-green-50 text-green-700 border border-green-100 rounded hover:bg-green-100" title="Exportar Pablo"><Download size={12}/></button>
-                        <button className="p-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded hover:bg-blue-100" title="Exportar JP"><Download size={12}/></button>
-                        <button onClick={exportDC} className="p-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded hover:bg-orange-100" title="Exportar DC"><Download size={12}/></button>
-                    </div>
-                </div>
-            )}
         </div>
 
         <OpportunityGrid 
@@ -594,6 +534,25 @@ function App() {
             statuses={statuses}
             oppTypes={oppTypes}
             motives={motives}
+            // Passing filters to OpportunityGrid to render in header
+            filters={{
+                account: filterAccount,
+                status: filterStatus,
+                manager: filterManager,
+                aprobador: filterAprobador,
+                negocio: filterNegocio,
+                tecnico: filterTecnico,
+                kred: filterKRed
+            }}
+            setFilters={{
+                setAccount: setFilterAccount,
+                setStatus: setFilterStatus,
+                setManager: setFilterManager,
+                setAprobador: setFilterAprobador,
+                setNegocio: setFilterNegocio,
+                setTecnico: setFilterTecnico,
+                setKRed: setFilterKRed
+            }}
         />
       </main>
 
