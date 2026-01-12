@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit2, RotateCcw, Menu, ChevronRight } from 'lucide-react';
+import { X, Plus, Trash2, Edit2, RotateCcw, Menu, ChevronRight, Search, Check, Save } from 'lucide-react';
 import { Account, OpportunityStatus, OpportunityType, Employee, JobRole, Motive } from '../types/types';
 import * as api from '../api';
 
@@ -20,6 +20,9 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     const [formData, setFormData] = useState<any>({});
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [inlineEditId, setInlineEditId] = useState<number | null>(null);
+    const [inlineData, setInlineData] = useState<any>({});
 
     const fetchData = async () => {
         try {
@@ -51,6 +54,10 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     const resetForm = () => {
         setEditingId(null);
+        setInlineEditId(null);
+        setInlineData({});
+        setSearchTerm('');
+        
         if (activeSubTab === 'accounts') {
             setFormData({ name: '', contact_name: '', contact_email: '', is_active: true });
         } else if (activeSubTab === 'employees') {
@@ -60,7 +67,7 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (isInline = false) => {
         try {
             const entityMap: any = {
                 accounts: 'accounts',
@@ -72,12 +79,17 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             };
             const endpoint = entityMap[activeSubTab];
 
-            if (editingId) {
-                await api.updateEntity(endpoint, editingId, formData);
+            if (isInline && inlineEditId) {
+                 await api.updateEntity(endpoint, inlineEditId, inlineData);
+                 setInlineEditId(null);
             } else {
-                await api.createEntity(endpoint, formData);
+                if (editingId) {
+                    await api.updateEntity(endpoint, editingId, formData);
+                } else {
+                    await api.createEntity(endpoint, formData);
+                }
+                if (!isInline) resetForm(); // Only reset search/edit state if not inline, or handle properly
             }
-            resetForm();
             fetchData();
         } catch (err: any) {
             alert(err.message);
@@ -105,6 +117,32 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const handleEdit = (item: any) => {
         setEditingId(item.id);
         setFormData({ ...item });
+        // Close inline edit if open
+        setInlineEditId(null);
+    };
+
+    const startInlineEdit = (item: any) => {
+        setInlineEditId(item.id);
+        setInlineData({ ...item });
+        // Close form edit if open
+        setEditingId(null);
+    };
+
+    const getFilteredList = () => {
+        let list: any[] = [];
+        if (activeSubTab === 'accounts') list = accounts;
+        else if (activeSubTab === 'statuses') list = statuses;
+        else if (activeSubTab === 'oppTypes') list = oppTypes;
+        else if (activeSubTab === 'roles') list = roles;
+        else if (activeSubTab === 'employees') list = employees;
+        else if (activeSubTab === 'motives') list = motives;
+
+        if (!searchTerm) return list;
+
+        return list.filter((item: any) => {
+            const name = item.name || item.full_name || '';
+            return name.toLowerCase().includes(searchTerm.toLowerCase());
+        });
     };
 
     if (!isOpen) return null;
@@ -112,6 +150,9 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const navItemClasses = (id: string) => `w-full text-left px-4 py-3 text-[11px] font-black uppercase tracking-wider flex items-center justify-between transition-all ${activeSubTab === id ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`;
     const inputClasses = "bg-[#3f4b5b] border-none text-white text-[12px] rounded px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-400 w-full placeholder:text-gray-400 disabled:opacity-50";
     const headerTh = "text-[#495057] font-black text-[10px] px-3 py-1.5 text-left bg-[#f8f9fa] uppercase tracking-wider";
+    
+    // Inline input styles
+    const inlineInputClass = "bg-white border border-gray-300 text-gray-800 text-[11px] rounded px-2 py-1 outline-none focus:border-blue-500 w-full h-7";
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
@@ -126,12 +167,12 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         <span className="font-black text-gray-800 text-xs uppercase tracking-tight">Configuración</span>
                     </div>
                     <nav className="flex-1 overflow-y-auto py-2">
-                        <button onClick={() => setActiveSubTab('accounts')} className={navItemClasses('accounts')}>Cuentas {activeSubTab === 'accounts' && <ChevronRight size={14}/>}</button>
-                        <button onClick={() => setActiveSubTab('statuses')} className={navItemClasses('statuses')}>Estados {activeSubTab === 'statuses' && <ChevronRight size={14}/>}</button>
-                        <button onClick={() => setActiveSubTab('oppTypes')} className={navItemClasses('oppTypes')}>Tipos ON {activeSubTab === 'oppTypes' && <ChevronRight size={14}/>}</button>
-                        <button onClick={() => setActiveSubTab('roles')} className={navItemClasses('roles')}>Puestos {activeSubTab === 'roles' && <ChevronRight size={14}/>}</button>
-                        <button onClick={() => setActiveSubTab('employees')} className={navItemClasses('employees')}>Empleados {activeSubTab === 'employees' && <ChevronRight size={14}/>}</button>
-                        <button onClick={() => setActiveSubTab('motives')} className={navItemClasses('motives')}>Motivos {activeSubTab === 'motives' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => { setActiveSubTab('accounts'); resetForm(); }} className={navItemClasses('accounts')}>Cuentas {activeSubTab === 'accounts' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => { setActiveSubTab('statuses'); resetForm(); }} className={navItemClasses('statuses')}>Estados {activeSubTab === 'statuses' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => { setActiveSubTab('oppTypes'); resetForm(); }} className={navItemClasses('oppTypes')}>Tipos ON {activeSubTab === 'oppTypes' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => { setActiveSubTab('roles'); resetForm(); }} className={navItemClasses('roles')}>Puestos {activeSubTab === 'roles' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => { setActiveSubTab('employees'); resetForm(); }} className={navItemClasses('employees')}>Empleados {activeSubTab === 'employees' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => { setActiveSubTab('motives'); resetForm(); }} className={navItemClasses('motives')}>Motivos {activeSubTab === 'motives' && <ChevronRight size={14}/>}</button>
                     </nav>
                 </div>
 
@@ -198,12 +239,24 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                 )}
                                 
                                 <div className="flex justify-end gap-2 pt-2">
-                                    <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-black py-2 px-6 rounded-lg text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2">
+                                    <button onClick={() => handleSave(false)} className="bg-blue-600 hover:bg-blue-700 text-white font-black py-2 px-6 rounded-lg text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2">
                                         {editingId ? <Edit2 size={12}/> : <Plus size={14}/>} 
                                         {editingId ? 'Actualizar' : 'Agregar'}
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+                            <input 
+                                type="text" 
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
+                                placeholder={`Buscar en ${activeSubTab === 'accounts' ? 'cuentas' : 'registros'}...`}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
 
                         {/* Table Section */}
@@ -216,46 +269,110 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                             {activeSubTab === 'accounts' && <th className={headerTh}>Contacto</th>}
                                             {activeSubTab === 'employees' && <th className={headerTh}>Puesto</th>}
                                             {(activeSubTab === 'accounts' || activeSubTab === 'employees') && <th className={`${headerTh} text-center`}>Estado</th>}
-                                            <th className={`${headerTh} text-right w-20`}>Acciones</th>
+                                            <th className={`${headerTh} text-right w-24`}>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 text-[11px]">
-                                        {(activeSubTab === 'accounts' ? accounts :
-                                          activeSubTab === 'statuses' ? statuses :
-                                          activeSubTab === 'oppTypes' ? oppTypes :
-                                          activeSubTab === 'roles' ? roles : 
-                                          activeSubTab === 'motives' ? motives : employees).map((item: any) => (
+                                        {getFilteredList().map((item: any) => (
                                             <tr key={item.id} className={`hover:bg-blue-50/30 transition-colors ${editingId === item.id ? 'bg-blue-50' : ''}`}>
+                                                
+                                                {/* NAME COLUMN */}
                                                 <td className="px-3 py-2">
-                                                    <div className="font-bold text-gray-800">{item.name || item.full_name}</div>
+                                                    {inlineEditId === item.id ? (
+                                                        <input 
+                                                            className={inlineInputClass} 
+                                                            value={inlineData.name || inlineData.full_name || ''} 
+                                                            onChange={e => setInlineData({ ...inlineData, [item.full_name ? 'full_name' : 'name']: e.target.value })}
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <div className="font-bold text-gray-800">{item.name || item.full_name}</div>
+                                                    )}
                                                 </td>
+
+                                                {/* CONTACT COLUMN (ACCOUNTS ONLY) */}
                                                 {activeSubTab === 'accounts' && (
                                                     <td className="px-3 py-2">
-                                                        <div className="font-bold text-gray-700">{item.contact_name || '-'}</div>
-                                                        {item.contact_email && <div className="text-[9px] text-gray-400 font-medium">{item.contact_email}</div>}
+                                                        {inlineEditId === item.id ? (
+                                                            <div className="space-y-1">
+                                                                <input 
+                                                                    className={inlineInputClass} 
+                                                                    placeholder="Nombre Contacto"
+                                                                    value={inlineData.contact_name || ''} 
+                                                                    onChange={e => setInlineData({ ...inlineData, contact_name: e.target.value })}
+                                                                />
+                                                                <input 
+                                                                    className={inlineInputClass} 
+                                                                    placeholder="Email Contacto"
+                                                                    value={inlineData.contact_email || ''} 
+                                                                    onChange={e => setInlineData({ ...inlineData, contact_email: e.target.value })}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div className="font-bold text-gray-700">{item.contact_name || '-'}</div>
+                                                                {item.contact_email && <div className="text-[9px] text-gray-400 font-medium">{item.contact_email}</div>}
+                                                            </>
+                                                        )}
                                                     </td>
                                                 )}
-                                                {activeSubTab === 'employees' && <td className="px-3 py-2 text-gray-600 font-medium">{item.role_name || '-'}</td>}
+
+                                                {/* ROLE COLUMN (EMPLOYEES ONLY) */}
+                                                {activeSubTab === 'employees' && (
+                                                    <td className="px-3 py-2 text-gray-600 font-medium">
+                                                        {inlineEditId === item.id ? (
+                                                            <select 
+                                                                className={inlineInputClass} 
+                                                                value={inlineData.role_id || ''} 
+                                                                onChange={e => setInlineData({ ...inlineData, role_id: parseInt(e.target.value) })}
+                                                            >
+                                                                {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                                            </select>
+                                                        ) : (
+                                                            item.role_name || '-'
+                                                        )}
+                                                    </td>
+                                                )}
+
+                                                {/* ACTIVE STATUS COLUMN */}
                                                 {(activeSubTab === 'accounts' || activeSubTab === 'employees') && (
                                                     <td className="px-3 py-2 text-center">
-                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                            {item.is_active ? 'Sí' : 'No'}
-                                                        </span>
+                                                        {inlineEditId === item.id ? (
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={inlineData.is_active} 
+                                                                onChange={e => setInlineData({ ...inlineData, is_active: e.target.checked })} 
+                                                            />
+                                                        ) : (
+                                                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                {item.is_active ? 'Sí' : 'No'}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 )}
+
+                                                {/* ACTIONS COLUMN */}
                                                 <td className="px-3 py-2 text-right">
                                                     <div className="flex justify-end gap-1">
-                                                        <button onClick={() => handleEdit(item)} className={`p-1.5 rounded-md transition-all ${editingId === item.id ? 'text-blue-700 bg-blue-100' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}><Edit2 size={12}/></button>
-                                                        <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"><Trash2 size={12}/></button>
+                                                        {inlineEditId === item.id ? (
+                                                            <>
+                                                                <button onClick={() => handleSave(true)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-all" title="Guardar"><Save size={14}/></button>
+                                                                <button onClick={() => setInlineEditId(null)} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-md transition-all" title="Cancelar"><X size={14}/></button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button onClick={() => startInlineEdit(item)} className={`p-1.5 rounded-md transition-all ${editingId === item.id ? 'text-blue-700 bg-blue-100' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}><Edit2 size={12}/></button>
+                                                                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"><Trash2 size={12}/></button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))}
-                                        {((activeSubTab === 'accounts' && accounts.length === 0) || 
-                                          (activeSubTab === 'statuses' && statuses.length === 0)) && (
+                                        {getFilteredList().length === 0 && (
                                             <tr>
                                                 <td colSpan={5} className="px-4 py-8 text-center text-gray-400 italic text-xs">
-                                                    No hay registros disponibles.
+                                                    No se encontraron resultados.
                                                 </td>
                                             </tr>
                                         )}

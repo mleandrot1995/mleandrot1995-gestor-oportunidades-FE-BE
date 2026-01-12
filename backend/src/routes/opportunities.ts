@@ -74,6 +74,8 @@ router.get('/opportunities', async (req, res) => {
         
         if (view === 'TRASH') {
             query += ` WHERE o.deleted_at IS NOT NULL`;
+        } else if (view === 'ALL') {
+            query += ` WHERE o.deleted_at IS NULL`; // ALL (Activas + Históricas) pero no papelera
         } else {
             query += ` WHERE o.deleted_at IS NULL`;
             if (view === 'ON') query += ` AND o.is_archived = FALSE`;
