@@ -12,6 +12,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'ON' | 'ON-OUT' | 'TRASH'>('ON');
   const [searchTerm, setSearchTerm] = useState('');
   
+
   // Filters (Ahora manejados internamente en OpportunityGrid, excepto si se requiere lógica global)
   // Pero para mantener consistencia con el requerimiento de moverlos a la cabecera de la grilla,
   // pasaremos estos estados como props a OpportunityGrid o haremos que OpportunityGrid maneje su propio filtrado.
