@@ -240,6 +240,14 @@ function App() {
     setFilterKRed('');
   };
 
+  const getDownloadDateSuffix = () => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    return `_${dd}${mm}${yyyy}`;
+  };
+
   const exportDC = () => {
     const headers = [
         "ID", "%", "Gerente Comercial", "Observaciones", 
@@ -317,7 +325,7 @@ function App() {
     ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DC Export");
-    XLSX.writeFile(wb, "export_dc.xlsx");
+    XLSX.writeFile(wb, `export_dc${getDownloadDateSuffix()}.xlsx`);
   };
 
   const exportPablo = () => {
@@ -368,7 +376,7 @@ function App() {
     ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pablo Export");
-    XLSX.writeFile(wb, "export_pablo.xlsx");
+    XLSX.writeFile(wb, `export_pablo${getDownloadDateSuffix()}.xlsx`);
   };
 
   const exportJP = async () => {
@@ -436,7 +444,7 @@ function App() {
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "JP Export");
-    XLSX.writeFile(wb, "export_jp.xlsx");
+    XLSX.writeFile(wb, `export_jp${getDownloadDateSuffix()}.xlsx`);
   };
 
   const formatDate = (dateString?: string) => {
