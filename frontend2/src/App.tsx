@@ -259,7 +259,7 @@ function App() {
         const motive = motives.find(m => m.id === opp.motive_id);
         return {
             "ID": opp.id,
-            "%": opp.percentage,
+            "%": opp.percentage ? `${opp.percentage} %`: '',
             "Gerente Comercial": opp.manager_name,
             "Observaciones": opp.last_observation,
             "Nombre de la cuenta": opp.account_name,
@@ -336,7 +336,7 @@ function App() {
     const data = filteredForPablo.map(opp => {
         const motive = motives.find(m => m.id === opp.motive_id);
         return {
-            "ID": opp.id, "%": opp.percentage, "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
+            "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
             "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
             "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '', "Motivo": motive ? motive.name : '',
         };
@@ -399,7 +399,7 @@ function App() {
     const data = allOpps.map(opp => {
         const eqPreventa = [opp.dc_name, opp.neg_name].filter(Boolean).join(' - ');
         return {
-            "ID": opp.id, "%": opp.percentage, "Nombre de la Cuenta": opp.account_name, "Nombre Oportunidad": opp.name,
+            "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Nombre de la Cuenta": opp.account_name, "Nombre Oportunidad": opp.name,
             "Gerente Comercial": opp.manager_name, "Equipo de Preventa-COE": eqPreventa || 'N/A',
             "Fecha-Inicio (Comercial pasa a Preventa)": formatDate(opp.start_date),
             "Fecha-Enfrendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
