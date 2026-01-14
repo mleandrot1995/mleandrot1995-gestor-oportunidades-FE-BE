@@ -4,7 +4,7 @@ import EditModal from './components/EditModal';
 import AdminModal from './components/AdminModal';
 import * as api from './api';
 import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from './types/types';
-import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft, Filter, X } from 'lucide-react';
+import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 
 function App() {
@@ -12,21 +12,6 @@ function App() {
   const [activeTab, setActiveTab] = useState<'ON' | 'ON-OUT' | 'TRASH'>('ON');
   const [searchTerm, setSearchTerm] = useState('');
   
-
-  // Filters (Ahora manejados internamente en OpportunityGrid, excepto si se requiere lógica global)
-  // Pero para mantener consistencia con el requerimiento de moverlos a la cabecera de la grilla,
-  // pasaremos estos estados como props a OpportunityGrid o haremos que OpportunityGrid maneje su propio filtrado.
-  // Dado que la arquitectura actual filtra en App.tsx antes de pasar la data, mantendremos el estado aquí
-  // pero la UI de los filtros se moverá a OpportunityGrid.
-
-  const [filterAccount, setFilterAccount] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
-  const [filterManager, setFilterManager] = useState<string>('');
-  const [filterAprobador, setFilterAprobador] = useState<string>('');
-  const [filterNegocio, setFilterNegocio] = useState<string>('');
-  const [filterTecnico, setFilterTecnico] = useState<string>('');
-  const [filterKRed, setFilterKRed] = useState<string>('');
-
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -111,7 +96,6 @@ function App() {
       }
   };
 
-  // REQ 3: Mover filas
   const handleMoveToHistory = async () => {
       if (!window.confirm("¿Desea mover registros a históricos según las reglas de negocio?")) return;
       
@@ -141,7 +125,6 @@ function App() {
       }
   };
 
-  // REQ 1: Nueva Fila con ID autocompletado
   const handleNewOpportunity = async () => {
     try {
         const { max_id } = await api.getMaxOpportunityId();
@@ -168,7 +151,6 @@ function App() {
     }
   };
 
-  // REQ 2: Ordenar filas (Solo en ON)
   const sortOpportunities = (opps: Opportunity[]) => {
       if (activeTab !== 'ON') return opps;
 
@@ -210,6 +192,7 @@ function App() {
       });
   };
 
+  // Lógica de filtrado: Solo SearchTerm (los filtros específicos ahora son internos del Grid)
   const filteredOpps = sortOpportunities(opportunities.filter(o => {
       const matchSearch = searchTerm === '' || 
           o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -219,26 +202,10 @@ function App() {
           (o.neg_name && o.neg_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (o.tec_name && o.tec_name.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchAccount = filterAccount === '' || o.account_name === filterAccount;
-      const matchStatus = filterStatus === '' || o.status_name === filterStatus;
-      const matchManager = filterManager === '' || o.manager_name === filterManager;
-      const matchAprobador = filterAprobador === '' || o.dc_name === filterAprobador;
-      const matchNegocio = filterNegocio === '' || o.neg_name === filterNegocio;
-      const matchTecnico = filterTecnico === '' || o.tec_name === filterTecnico;
-      const matchKRed = filterKRed === '' || String(o.k_red_index) === filterKRed;
-
-      return matchSearch && matchAccount && matchStatus && matchManager && matchAprobador && matchNegocio && matchTecnico && matchKRed;
+      // Eliminamos los filtros de cuenta, estado, etc. de aquí para que la grilla reciba todo
+      // y pueda popular sus propios dropdowns dinámicamente.
+      return matchSearch;
   }));
-
-  const clearFilters = () => {
-    setFilterAccount('');
-    setFilterStatus('');
-    setFilterManager('');
-    setFilterAprobador('');
-    setFilterNegocio('');
-    setFilterTecnico('');
-    setFilterKRed('');
-  };
 
   const getDownloadDateSuffix = () => {
     const today = new Date();
@@ -459,6 +426,20 @@ function App() {
     } catch { return ''; }
   };
 
+  // --- ELEMENTO DE BÚSQUEDA ---
+  // Creamos el componente de búsqueda aquí para pasarlo como prop
+  const searchElement = (
+    <div className="relative w-full">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+        <input 
+            type="text" placeholder="Buscar..." 
+            className="pl-10 pr-4 py-1.5 border border-gray-200 rounded-lg text-xs w-full outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 font-medium bg-white shadow-sm transition-all"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+        />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-xs text-gray-800">
       <header className="bg-white border-b shadow-sm sticky top-0 z-30">
@@ -490,25 +471,13 @@ function App() {
       </header>
 
       <main className="px-4 py-2">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
             <div className="flex space-x-1">
                 <button onClick={() => setActiveTab('ON')} className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all rounded-t-lg ${activeTab === 'ON' ? 'bg-white border-t border-x border-gray-200 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>ON (Activas)</button>
                 <button onClick={() => setActiveTab('ON-OUT')} className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all rounded-t-lg ${activeTab === 'ON-OUT' ? 'bg-white border-t border-x border-gray-200 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>ON-OUT (Históricos)</button>
                 <button onClick={() => setActiveTab('TRASH')} className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all rounded-t-lg flex items-center gap-2 ${activeTab === 'TRASH' ? 'bg-white border-t border-x border-gray-200 text-red-600' : 'text-gray-400 hover:text-red-400'}`}>
                     <Trash2 size={12}/> PAPELERA
                 </button>
-            </div>
-        </div>
-
-        <div className="mb-2 flex items-center gap-4 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
-            <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300" size={16} />
-                <input 
-                    type="text" placeholder="Buscar..." 
-                    className="pl-10 pr-4 py-1.5 border-none rounded-lg text-xs w-full outline-none focus:ring-0 placeholder:text-gray-300 font-medium bg-gray-50/50"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                />
             </div>
 
             <div className="flex items-center gap-1.5 ml-auto">
@@ -528,6 +497,7 @@ function App() {
             </div>
         </div>
 
+        {/* Aquí pasamos searchElement en lugar de filters/setFilters antiguos */}
         <OpportunityGrid 
             data={filteredOpps}
             onOpenDetail={(opp) => { setEditingOpp(opp); setIsNewRecord(false); setIsModalOpen(true); }}
@@ -543,25 +513,7 @@ function App() {
             statuses={statuses}
             oppTypes={oppTypes}
             motives={motives}
-            // Passing filters to OpportunityGrid to render in header
-            filters={{
-                account: filterAccount,
-                status: filterStatus,
-                manager: filterManager,
-                aprobador: filterAprobador,
-                negocio: filterNegocio,
-                tecnico: filterTecnico,
-                kred: filterKRed
-            }}
-            setFilters={{
-                setAccount: setFilterAccount,
-                setStatus: setFilterStatus,
-                setManager: setFilterManager,
-                setAprobador: setFilterAprobador,
-                setNegocio: setFilterNegocio,
-                setTecnico: setFilterTecnico,
-                setKRed: setFilterKRed
-            }}
+            searchElement={searchElement}
         />
       </main>
 
