@@ -118,7 +118,13 @@ function App() {
 
       try {
           await Promise.all(toMove.map(o => api.updateOpportunity(o.id, { is_archived: true })));
-          alert(`${toMove.length} registros movidos a históricos.`);
+          
+          const movedItemsMessage = toMove
+              .map(o => `- Cuenta: ${o.account_name} | Oportunidad: ${o.name}`)
+              .join('\n');
+          
+          alert(`Se movieron ${toMove.length} registros a históricos:\n\n${movedItemsMessage}`);
+          
           fetchData();
       } catch (err) {
           alert("Error al mover registros.");
@@ -134,9 +140,9 @@ function App() {
         setEditingOpp({
             id: nextId,
             name: '',
-            account_id: accounts[0]?.id || 0,
-            status_id: statuses.find(s => s.name.toUpperCase().includes('EVALUACIÓN'))?.id || statuses[0]?.id || 0,
-            manager_id: employees.find(e => e.role_name === 'Gerente Comercial')?.id || employees[0]?.id || 0,
+            account_id: 0,
+            status_id: 0,
+            manager_id: 0,
             percentage: 0,
             color_code: 'NONE',
             start_date: today,
