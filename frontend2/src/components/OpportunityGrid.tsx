@@ -455,7 +455,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                     <div className="flex flex-col items-center gap-1.5">
                                         <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
                                             <select 
-                                                className={`${inlineInput} text-center text-[9px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
+                                                className={`${inlineInput} text-center text-[8px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
                                                 value={opp.status_id} 
                                                 onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} 
                                                 disabled={isReadOnlyView}
@@ -465,7 +465,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                             </select>
                                         </div>
                                         <div className="w-full border border-gray-200 rounded-md bg-gray-50/50 p-1">
-                                            <select className={`${inlineInput} text-center text-[8px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
+                                            <select className={`${inlineInput} text-center text-[7px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
                                                 <option value="">- Motivo -</option>
                                                 {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                             </select>
