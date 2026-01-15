@@ -123,8 +123,17 @@ const EditModal: React.FC<Props> = ({
         if (!validateSemaforo(formData.percentage || 0, formData.color_code || 'NONE')) {
             return setValidationMsg("La combinación de Porcentaje y Semáforo no es válida según las reglas de negocio.");
         }
+        
+        const dataToSave = {
+            ...formData,
+            has_ia_proposal: !!formData.has_ia_proposal,
+            has_prototype: !!formData.has_prototype,
+            has_rfp: !!formData.has_rfp,
+            has_anteproyecto: !!formData.has_anteproyecto,
+            percentage: formData.percentage || 0,
+        };
 
-        onSave(formData);
+        onSave(dataToSave);
     };
 
     const handleInputChange = (field: keyof Opportunity, value: any) => {
