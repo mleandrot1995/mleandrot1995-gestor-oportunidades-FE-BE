@@ -121,32 +121,38 @@ const OpportunityGrid: React.FC<Props> = ({
     };
 
     const validateSemaforo = (percent: number, color: string): boolean => {
-        if (color === 'RED' && percent !== 0) return false;
-        if (percent === 0 && color !== 'RED' && color !== 'NONE') return false;
-        if (color === 'YELLOW' && (percent < 50 || percent > 69)) return false;
-        if (color === 'GREEN' && (percent < 70 || percent > 100)) return false;
-        if (color === 'NONE' && percent > 49) return false;
-        return true;
+        switch (color) {
+            case 'RED':
+                return percent === 0;
+            case 'YELLOW':
+                return percent >= 0 && percent <= 69;
+            case 'NONE':
+                return percent >= 0 && percent <= 69;
+            case 'GREEN':
+                return percent >= 70 && percent <= 100;
+            default:
+                return false;
+        }
     };
-
+    
     const getRangeSuggestion = (color: string): string => {
         switch (color) {
             case 'RED': return 'Debe ser 0%';
-            case 'YELLOW': return 'Rango: 50% - 69%';
+            case 'YELLOW': return 'Rango: 0% - 69%';
             case 'GREEN': return 'Rango: 70% - 100%';
-            case 'NONE': return 'Rango: 0% - 49%';
+            case 'NONE': return 'Rango: 0% - 69%';
             default: return '';
         }
     };
-
+    
     const handleSavePercentage = async (oppId: number, percent: number, color: string) => {
         if (isReadOnlyView) return;
         
         if (!validateSemaforo(percent, color)) {
-            alert(`Error de regla - Combinación inválida:\n- Rojo: 0%\n- Amarillo: 50-69%\n- Verde: 70-100%\n- Sin color: 0-49%`);
+            alert(`Error de regla - Combinación inválida:\n- Rojo: 0%\n- Amarillo: 0% - 69%\n- Sin color: 0% - 69%\n- Verde: 70% - 100%`);
             return;
         }
-
+    
         try {
             await api.updateOpportunity(oppId, { percentage: percent, color_code: color });
             onUpdate();
@@ -155,7 +161,7 @@ const OpportunityGrid: React.FC<Props> = ({
 
     const handleColorChange = async (oppId: number, newColor: string, currentPercent: number) => {
         if (isReadOnlyView) return;
-
+    
         if (newColor === 'RED') {
             try {
                 await api.updateOpportunity(oppId, { percentage: 0, color_code: newColor });
@@ -163,7 +169,29 @@ const OpportunityGrid: React.FC<Props> = ({
                 return;
             } catch (e) { console.error(e); return; }
         }
-
+    
+        // Si el nuevo color es Amarillo, siempre pedir el porcentaje.
+        if (newColor === 'YELLOW') {
+            const range = getRangeSuggestion(newColor);
+            let newPercentStr = prompt(`Ingrese el porcentaje para el color Amarillo.\n${range}.`);
+            
+            if (newPercentStr === null) return; // User cancelled
+            
+            const newPercent = parseInt(newPercentStr);
+            
+            if (isNaN(newPercent) || !validateSemaforo(newPercent, newColor)) {
+                alert("Porcentaje inválido o fuera de rango. No se guardaron los cambios.");
+                return;
+            }
+    
+            try {
+                await api.updateOpportunity(oppId, { percentage: newPercent, color_code: newColor });
+                onUpdate();
+            } catch (e) { console.error(e); }
+            return; // Termina la ejecución aquí para no pasar a la lógica de abajo
+        }
+    
+        // Lógica para otros colores (Verde, Sin color)
         if (!validateSemaforo(currentPercent, newColor)) {
             const range = getRangeSuggestion(newColor);
             let newPercentStr = prompt(`El porcentaje actual (${currentPercent}%) no es válido para el color ${newColor}.\n${range}.\n\nIngrese el nuevo porcentaje:`);
@@ -176,15 +204,17 @@ const OpportunityGrid: React.FC<Props> = ({
                 alert("Porcentaje inválido o fuera de rango. No se guardaron los cambios.");
                 return;
             }
-
+    
             try {
                 await api.updateOpportunity(oppId, { percentage: newPercent, color_code: newColor });
                 onUpdate();
             } catch (e) { console.error(e); }
         } else {
+            // Si el porcentaje actual es válido, solo se cambia el color
             handleSavePercentage(oppId, currentPercent, newColor);
         }
     };
+    
 
     const handleObservationUpdate = async (oppId: number, text: string, oldText?: string) => {
         if (isReadOnlyView || text === oldText) return;
@@ -221,7 +251,7 @@ const OpportunityGrid: React.FC<Props> = ({
     };
 
     // Estilos (Originales + Nuevos para filtros)
-    const headerClass = "px-2 py-3 text-center text-[10px] font-black text-gray-800 uppercase tracking-wider border-b border-r border-gray-300 bg-gray-100";
+    const headerClass = "px-2 py-3 text-center text-[10px] font-black text-gray-800 uppercase tracking-wider border-b border-r border-gray-300 bg-gray-100 sticky top-0 z-10";
     const cellClass = "px-2 py-3 border-b border-r border-gray-300 align-middle text-gray-900 font-medium";
     const inlineInput = "w-full bg-transparent hover:bg-gray-100/50 px-1 py-0.5 rounded cursor-pointer border-none font-inherit text-sm outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all";
     const inlineDate = "bg-transparent border-none text-[10px] font-bold p-0 cursor-pointer hover:bg-gray-100 rounded px-1 w-full text-gray-800";
@@ -344,7 +374,7 @@ const OpportunityGrid: React.FC<Props> = ({
             </div>
 
             {/* --- TABLA ORIGINAL (Usando filteredData) --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-x-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-auto max-h-[calc(100vh-170px)]">
                 <table className="w-full border-collapse min-w-[1500px]">
                     <thead>
                         <tr>
