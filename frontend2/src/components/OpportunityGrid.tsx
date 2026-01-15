@@ -260,10 +260,10 @@ const OpportunityGrid: React.FC<Props> = ({
     const filterSelectClass = "text-[11px] h-8 border border-gray-200 rounded-lg px-2 bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 font-medium text-gray-700 min-w-[120px]";
 
     // Listas filtradas para los selects de edición (Lógica original)
-    const filteredDC = employees.filter(e => e.role_name === 'Aprobador' && e.is_active);
-    const filteredNeg = employees.filter(e => e.role_name === 'Analista de negocios' && e.is_active);
-    const filteredTec = employees.filter(e => e.role_name === 'Responsable técnico' && e.is_active);
-    const filteredManagers = employees.filter(e => e.role_name === 'Gerente Comercial' && e.is_active);
+    const filteredDC = employees.filter(e => e.role_name === 'Aprobador' && e.is_active).sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const filteredNeg = employees.filter(e => e.role_name === 'Analista de negocios' && e.is_active).sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const filteredTec = employees.filter(e => e.role_name === 'Responsable técnico' && e.is_active).sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const filteredManagers = employees.filter(e => e.role_name === 'Gerente Comercial' && e.is_active).sort((a, b) => a.full_name.localeCompare(b.full_name));
 
     const renderDateInput = (oppId: number, field: keyof Opportunity, value?: string, colorClass: string = "text-gray-800") => {
         const id = `${oppId}-${field}`;
