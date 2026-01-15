@@ -1,6 +1,5 @@
 node_modules
 dist
-.env
 *.log
 cloud_sql_proxy
 .idx
