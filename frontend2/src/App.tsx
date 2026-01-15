@@ -158,45 +158,59 @@ function App() {
   };
 
   const sortOpportunities = (opps: Opportunity[]) => {
-      if (activeTab !== 'ON') return opps;
+    if (activeTab !== 'ON') return opps;
 
-      const statusOrder = ["EVALUACIÓN", "ELABORACIÓN", "ESPERANDO", "RESPUESTA", "REASIGNADO A CAPACITY", "DESESTIMADA", "GANADA", "PERDIDA"];
+    const statusOrder = ["EVALUACIÓN", "ELABORACIÓN", "ESPERANDO", "RESPUESTA", "REASIGNADO A CAPACITY", "DESESTIMADA", "GANADA", "PERDIDA"];
 
-      return [...opps].sort((a, b) => {
-          const aEmpty = !a.name && !a.account_id;
-          const bEmpty = !b.name && !b.account_id;
-          if (aEmpty && !bEmpty) return -1;
-          if (!aEmpty && bEmpty) return 1;
+    return [...opps].sort((a, b) => {
+        const aEmpty = !a.name && !a.account_id;
+        const bEmpty = !b.name && !b.account_id;
+        if (aEmpty && !bEmpty) return -1;
+        if (!aEmpty && bEmpty) return 1;
 
-          const aMissingStatus = a.name && a.manager_id && !a.status_id;
-          const bMissingStatus = b.name && b.manager_id && !b.status_id;
-          if (aMissingStatus && !bMissingStatus) return -1;
-          if (!aMissingStatus && bMissingStatus) return 1;
+        const aMissingStatus = a.name && a.manager_id && !a.status_id;
+        const bMissingStatus = b.name && b.manager_id && !b.status_id;
+        if (aMissingStatus && !bMissingStatus) return -1;
+        if (!aMissingStatus && bMissingStatus) return 1;
 
-          const aStatusName = (a.status_name || "").toUpperCase();
-          const bStatusName = (b.status_name || "").toUpperCase();
+        const aStatusName = (a.status_name || "").toUpperCase();
+        const bStatusName = (b.status_name || "").toUpperCase();
 
-          const getStatusIndex = (name: string) => {
-             for (let i = 0; i < statusOrder.length; i++) {
-                 if (name.includes(statusOrder[i])) return i;
-             }
-             return -1;
-          }
+        const getStatusIndex = (name: string) => {
+           for (let i = 0; i < statusOrder.length; i++) {
+               if (name.includes(statusOrder[i])) return i;
+           }
+           return -1;
+        }
 
-          const aStatusIdx = getStatusIndex(aStatusName);
-          const bStatusIdx = getStatusIndex(bStatusName);
-          
-          if (aStatusIdx !== -1 && bStatusIdx !== -1) {
-              if (aStatusIdx !== bStatusIdx) return aStatusIdx - bStatusIdx;
-          } else if (aStatusIdx !== -1) return -1;
-          else if (bStatusIdx !== -1) return 1;
+        const aStatusIdx = getStatusIndex(aStatusName);
+        const bStatusIdx = getStatusIndex(bStatusName);
+        
+        if (aStatusIdx !== -1 && bStatusIdx !== -1) {
+            if (aStatusIdx !== bStatusIdx) {
+                return aStatusIdx - bStatusIdx;
+            } else {
+                // Statuses are the same. Apply new date logic.
+                const aDate = a.delivery_date;
+                const bDate = b.delivery_date;
 
-          const kDiff = (b.k_red_index || 0) - (a.k_red_index || 0);
-          if (kDiff !== 0) return kDiff;
+                if (!aDate && bDate) return -1; // a (no date) comes first
+                if (aDate && !bDate) return 1;  // b (no date) comes first
 
-          return b.id - a.id;
-      });
-  };
+                if (aDate && bDate) {
+                    const dateDiff = new Date(bDate).getTime() - new Date(aDate).getTime();
+                    if (dateDiff !== 0) return dateDiff;
+                }
+            }
+        } else if (aStatusIdx !== -1) return -1;
+        else if (bStatusIdx !== -1) return 1;
+
+        const kDiff = (b.k_red_index || 0) - (a.k_red_index || 0);
+        if (kDiff !== 0) return kDiff;
+
+        return b.id - a.id;
+    });
+};
 
   // Lógica de filtrado: Solo SearchTerm (los filtros específicos ahora son internos del Grid)
   const filteredOpps = sortOpportunities(opportunities.filter(o => {
