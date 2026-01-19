@@ -1,29 +1,34 @@
-import 'dotenv/config'; // Load environment variables
+
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import opportunitiesRouter from './routes/opportunities.js';
 import accountsRouter from './routes/accounts.js';
 import catalogsRouter from './routes/catalogs.js';
 import observationsRouter from './routes/observations.js';
+import authRouter from './routes/auth.js';
+import { authenticateToken } from './middleware/auth.js';
 import { db } from './db/index.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3001;
 
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
 app.use(express.json());
 
+// Rutas públicas
+app.use('/api', authRouter);
+
+// Middleware de autenticación
+app.use(authenticateToken);
+
+// Rutas protegidas
 app.use('/api', opportunitiesRouter);
 app.use('/api', accountsRouter);
 app.use('/api', catalogsRouter);
 app.use('/api', observationsRouter);
 
-// Health check endpoint
+// Health check
 app.get('/api/health', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');

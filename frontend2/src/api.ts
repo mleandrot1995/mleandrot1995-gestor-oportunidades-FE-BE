@@ -1,20 +1,38 @@
+
 const API_BASE_URL = '/api';
 
+// Function to get the token from localStorage
+const getToken = () => localStorage.getItem('token');
+
 export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
+    const token = getToken();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
+        headers,
     });
+
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.error || `Error ${response.status}: ${response.statusText}`);
     }
+
     if (response.status === 204) return null;
     return response.json();
 };
+
+// Auth
+export const login = (email: string, password: string) => fetchApi('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+export const changePassword = (password: string) => fetchApi('/auth/change-password', { method: 'POST', body: JSON.stringify({ password }) });
+
 
 // Oportunidades
 export const getOpportunities = (view: string) => fetchApi(`/opportunities?view=${view}`);
@@ -37,6 +55,14 @@ export const getEmployees = () => fetchApi('/employees');
 export const getStatuses = () => fetchApi('/statuses');
 export const getOppTypes = () => fetchApi('/opp-types');
 export const getJobRoles = () => fetchApi('/job-roles');
+
+// Users & Profiles
+export const getUsers = () => fetchApi('/users');
+export const createUser = (data: any) => fetchApi('/users', { method: 'POST', body: JSON.stringify(data) });
+export const updateUser = (id: number, data: any) => fetchApi(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteUser = (id: number) => fetchApi(`/users/${id}`, { method: 'DELETE' });
+export const getProfiles = () => fetchApi('/profiles');
+
 
 // ABMC Genérico
 export const createEntity = (entity: string, data: any) => fetchApi(`/${entity}`, { method: 'POST', body: JSON.stringify(data) });

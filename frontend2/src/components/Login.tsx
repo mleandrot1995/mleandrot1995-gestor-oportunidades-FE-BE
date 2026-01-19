@@ -1,23 +1,26 @@
+
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import * as api from '../api';
 
 interface LoginProps {
-    onLogin: (user: { name: string; role: 'supervisor' | 'assistant' }) => void;
+    onLogin: (token: string, firstLogin: boolean) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<'supervisor' | 'assistant'>('assistant');
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Simulación de login - En el futuro conectar con backend
-        if (username && password) {
-            onLogin({ name: username, role });
-        } else {
-            alert('Por favor complete todos los campos');
+        setError('');
+        try {
+            const { token, first_login } = await api.login(email, password);
+            onLogin(token, first_login);
+        } catch (err) {
+            setError(err.message || 'Error al iniciar sesión');
         }
     };
 
@@ -30,16 +33,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </div>
                 
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">{error}</div>}
                     <div>
-                        <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Usuario</label>
+                        <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Email</label>
                         <div className="relative">
                             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                             <input 
-                                type="text" 
+                                type="email" 
                                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                                placeholder="Ingresa tu usuario"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Ingresa tu email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
                     </div>
@@ -61,26 +65,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Perfil</label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button
-                                type="button"
-                                className={`py-2 px-4 rounded-lg text-xs font-bold uppercase transition-all ${role === 'supervisor' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                                onClick={() => setRole('supervisor')}
-                            >
-                                Supervisor
-                            </button>
-                            <button
-                                type="button"
-                                className={`py-2 px-4 rounded-lg text-xs font-bold uppercase transition-all ${role === 'assistant' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                                onClick={() => setRole('assistant')}
-                            >
-                                Asistente
                             </button>
                         </div>
                     </div>

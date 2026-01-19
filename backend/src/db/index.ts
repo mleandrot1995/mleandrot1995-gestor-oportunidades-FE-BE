@@ -1,13 +1,13 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  user: process.env.DB_USER || 'user',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'mydatabase',
-  password: process.env.DB_PASSWORD || 'password',
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
   port: parseInt(process.env.DB_PORT || '5432'),
   // Deshabilitar SSL si conectamos a localhost (ej. vía Cloud SQL Proxy)
-  ssl: (process.env.DB_HOST === '127.0.0.1' || process.env.DB_HOST === 'localhost') 
+  ssl: (process.env.DB_HOST === '127.0.0.1') 
        ? false 
        : { rejectUnauthorized: false }
 });
@@ -24,7 +24,8 @@ export const db = {
     try {
       const res = await pool.query(text, params);
       const duration = Date.now() - start;
-      console.log('executed query', { text, duration, rows: res.rowCount });
+      // Descomentar para un log más detallado de las consultas
+      // console.log('executed query', { text, duration, rows: res.rowCount });
       return res;
     } catch (error) {
         console.error('Error ejecutando la consulta:', { text, params, error });
@@ -60,19 +61,15 @@ export const db = {
         return rows[0];
     },
     update: async (id: number, data: any) => {
-        // Verificar si hay campos para actualizar
         const keys = Object.keys(data);
-        if (keys.length === 0) return null; // Nada que actualizar
+        if (keys.length === 0) return null;
 
         const assignments = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
         const values = [id, ...Object.values(data)];
         
         let query = `UPDATE ${tableName} SET ${assignments}`;
         
-        // CORRECCIÓN: Según el esquema (init.sql), las tablas 'employees' y 'accounts' 
-        // NO tienen columna 'updated_at', solo 'created_at'.
-        // Solo 'opportunities' y 'opportunity_observations' la tienen.
-        const tablesWithTimestamp = ['opportunities', 'opportunity_observations'];
+        const tablesWithTimestamp = ['opportunities', 'opportunity_observations', 'users'];
         
         if (tablesWithTimestamp.includes(tableName)) {
              query += `, updated_at = CURRENT_TIMESTAMP`;
