@@ -431,10 +431,17 @@ const OpportunityGrid: React.FC<Props> = ({
                                     </div>
                                 </td>
                                 
-                                <td className={`${cellClass} font-black py-1`}>
-                                    <select className={`${inlineInput} text-sm font-bold`} value={opp.account_id} onChange={e => handleSaveField(opp.id, 'account_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                <td className={`${cellClass} text-center font-black py-1`}>
+                                    <select className={`${inlineInput} text-center text-sm font-bold`} value={opp.account_id} onChange={e => handleSaveField(opp.id, 'account_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
                                         {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                                     </select>
+                                    
+                                    {/* INICIO DE LA MODIFICACIÓN */}
+                                    <div className="text-[10px] italic text-gray-500 mt-1 pl-1">
+                                        {accounts.find(a => a.id === opp.account_id)?.industry_name}
+                                    </div>
+                                    {/* FIN DE LA MODIFICACIÓN */}
+
                                 </td>
                                 
                                 <td className={`${cellClass} py-1`}>
@@ -485,7 +492,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                     <div className="flex flex-col items-center gap-1.5">
                                         <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
                                             <select 
-                                                className={`${inlineInput} text-center text-[8px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
+                                                className={`${inlineInput} text-center text-[9.9px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
                                                 value={opp.status_id} 
                                                 onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} 
                                                 disabled={isReadOnlyView}
@@ -495,7 +502,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                             </select>
                                         </div>
                                         <div className="w-full border border-gray-200 rounded-md bg-gray-50/50 p-1">
-                                            <select className={`${inlineInput} text-center text-[7px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
+                                            <select className={`${inlineInput} text-center text-[9.9px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
                                                 <option value="">- Motivo -</option>
                                                 {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                             </select>

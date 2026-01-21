@@ -7,13 +7,22 @@ const router = Router();
 router.get('/accounts', async (req, res) => {
     try {
         const onlyActive = req.query.active === 'true';
-        let rows;
+        
+        let query = `
+            SELECT a.*, i.name as industry_name
+            FROM accounts a
+            LEFT JOIN industries i ON a.industry_id = i.id
+        `;
+
         if (onlyActive) {
-            rows = await db.table('accounts').where('is_active', true).select();
-        } else {
-            rows = await db.table('accounts').select();
+            query += ' WHERE a.is_active = TRUE';
         }
+
+        query += ' ORDER BY a.name';
+
+        const { rows } = await db.query(query);
         res.json(rows);
+
     } catch (error) {
         console.error('Error fetching accounts:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -23,20 +32,23 @@ router.get('/accounts', async (req, res) => {
 // POST create account
 router.post('/accounts', async (req, res) => {
     try {
-        const { name, contact_name, contact_email, is_active } = req.body;
+        const { name, contact_name, contact_email, is_active, industry_id } = req.body;
         if (!name) {
             return res.status(400).json({ error: 'El nombre de la cuenta es obligatorio.' });
         }
-        const newAccount = await db.table('accounts').insert({
+
+        const dataToInsert = {
             name,
             contact_name,
             contact_email,
-            is_active: is_active !== undefined ? is_active : true
-        });
+            is_active: is_active !== undefined ? is_active : true,
+            industry_id: industry_id || null
+        };
+
+        const newAccount = await db.table('accounts').insert(dataToInsert);
         res.status(201).json(newAccount);
     } catch (error: any) {
         console.error('Error creating account:', error);
-        // Check for unique constraint violation (code for PostgreSQL)
         if (error.code === '23505') {
             return res.status(409).json({ error: `Ya existe una cuenta con el nombre '${req.body.name}'.` });
         }
@@ -47,7 +59,7 @@ router.post('/accounts', async (req, res) => {
 // PUT update account
 router.put('/accounts/:id', async (req, res) => {
     try {
-        const { name, contact_name, contact_email, is_active } = req.body;
+        const { name, contact_name, contact_email, is_active, industry_id } = req.body;
         const accountId = parseInt(req.params.id, 10);
         if (isNaN(accountId)) {
             return res.status(400).json({ error: 'ID de cuenta inválido.' });
@@ -64,7 +76,15 @@ router.put('/accounts/:id', async (req, res) => {
             }
         }
         
-        const updatedAccount = await db.table('accounts').update(accountId, { name, contact_name, contact_email, is_active });
+        const dataToUpdate = {
+            name,
+            contact_name,
+            contact_email,
+            is_active,
+            industry_id: industry_id !== undefined ? industry_id : null
+        };
+
+        const updatedAccount = await db.table('accounts').update(accountId, dataToUpdate);
         res.json(updatedAccount);
     } catch (error: any) {
         console.error('Error updating account:', error);

@@ -7,6 +7,7 @@ import accountsRouter from './routes/accounts.js';
 import catalogsRouter from './routes/catalogs.js';
 import observationsRouter from './routes/observations.js';
 import authRouter from './routes/auth.js';
+import usersRouter from './routes/users.js';
 import { authenticateToken } from './middleware/auth.js';
 import { db } from './db/index.js';
 
@@ -17,18 +18,9 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas públicas
-app.use('/api', authRouter);
+app.use('/api/auth', authRouter);
 
-// Middleware de autenticación
-app.use(authenticateToken);
-
-// Rutas protegidas
-app.use('/api', opportunitiesRouter);
-app.use('/api', accountsRouter);
-app.use('/api', catalogsRouter);
-app.use('/api', observationsRouter);
-
-// Health check
+// Health check (público)
 app.get('/api/health', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');
@@ -39,6 +31,16 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({ status: 'error', database: 'disconnected', error: msg });
   }
 });
+
+// Middleware de autenticación para todas las rutas siguientes
+app.use(authenticateToken);
+
+// Rutas protegidas
+app.use('/api', opportunitiesRouter);
+app.use('/api', accountsRouter);
+app.use('/api', catalogsRouter);
+app.use('/api', observationsRouter);
+app.use('/api', usersRouter);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

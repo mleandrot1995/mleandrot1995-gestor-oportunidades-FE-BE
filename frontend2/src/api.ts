@@ -6,18 +6,20 @@ const getToken = () => localStorage.getItem('token');
 
 export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
     const token = getToken();
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-    };
+    const headers = new Headers(options.headers || {});
+
+    if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+    }
 
     if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers.set('Authorization', `Bearer ${token}`);
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
+        cache: 'no-store' // Esto previene los 304 y fuerza la obtención de datos frescos
     });
 
     if (!response.ok) {
@@ -55,6 +57,8 @@ export const getEmployees = () => fetchApi('/employees');
 export const getStatuses = () => fetchApi('/statuses');
 export const getOppTypes = () => fetchApi('/opp-types');
 export const getJobRoles = () => fetchApi('/job-roles');
+export const getMotives = () => fetchApi('/motives');
+export const getIndustries = () => fetchApi('/industries');
 
 // Users & Profiles
 export const getUsers = () => fetchApi('/users');

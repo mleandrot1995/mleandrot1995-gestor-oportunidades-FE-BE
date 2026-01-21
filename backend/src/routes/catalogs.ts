@@ -255,7 +255,7 @@ router.delete('/opp-types/:id', async (req, res) => {
 });
 
 
-// --- MOTIVES ---
+// --- MOTIVES --
 router.get('/motives', async (req, res) => {
     try {
         const rows = await db.table('motives').select();
@@ -313,6 +313,67 @@ router.delete('/motives/:id', async (req, res) => {
     } catch (e) { 
         console.error('Error deleting motive:', e);
         res.status(500).json({ error: 'Error deleting motive' }); 
+    }
+});
+
+// --- INDUSTRIES ---
+router.get('/industries', async (req, res) => {
+    try {
+        const rows = await db.table('industries').select();
+        res.json(rows);
+    } catch (e) {
+        console.error('Error fetching industries:', e);
+        res.status(500).json({ error: 'Error fetching industries' });
+    }
+});
+
+router.post('/industries', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || !String(name).trim()) {
+            return res.status(400).json({ error: 'El nombre de la industria es obligatorio.' });
+        }
+        const newRecord = await db.table('industries').insert({ name });
+        res.status(201).json(newRecord);
+    } catch (error: any) {
+        console.error('Error creating industry:', error);
+        if (error.code === '23505') {
+            return res.status(409).json({ error: `Ya existe una industria con el nombre '${req.body.name}'.` });
+        }
+        res.status(500).json({ error: 'Error creating industry' });
+    }
+});
+
+router.put('/industries/:id', async (req, res) => {
+    try {
+        const { name } = req.body;
+        const id = parseInt(req.params.id);
+        if (!name || !String(name).trim()) {
+            return res.status(400).json({ error: 'El nombre de la industria es obligatorio.' });
+        }
+        const updated = await db.table('industries').update(id, { name });
+        res.json(updated);
+    } catch (error: any) {
+        console.error('Error updating industry:', error);
+        if (error.code === '23505') {
+            return res.status(409).json({ error: `Ya existe una industria con el nombre '${req.body.name}'.` });
+        }
+        res.status(500).json({ error: 'Error updating industry' });
+    }
+});
+
+router.delete('/industries/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { rows } = await db.query('SELECT COUNT(*) FROM accounts WHERE industry_id = $1', [id]);
+        if (parseInt(rows[0].count) > 0) {
+            return res.status(400).json({ error: 'Existen cuentas con esta industria y no puede ser eliminada.' });
+        }
+        await db.query('DELETE FROM industries WHERE id = $1', [id]);
+        res.status(204).send();
+    } catch (e) {
+        console.error('Error deleting industry:', e);
+        res.status(500).json({ error: 'Error deleting industry' });
     }
 });
 

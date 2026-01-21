@@ -68,6 +68,8 @@ export interface Account {
     contact_name?: string;
     contact_email?: string;
     is_active: boolean;
+    industry_id?: number;
+    industry_name?: string;
 }
 
 export interface Employee {
@@ -94,6 +96,11 @@ export interface JobRole {
 }
 
 export interface Motive {
+    id: number;
+    name: string;
+}
+
+export interface Industry {
     id: number;
     name: string;
 }
