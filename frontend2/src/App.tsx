@@ -291,12 +291,12 @@ function App() {
         try {
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return '';
-            const day = date.getUTCDate().toString().padStart(2, '0');
-            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-            const year = date.getUTCFullYear();
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
             return `${day}/${month}/${year}`;
         } catch { return ''; }
-    };
+      };    
 
     const getDownloadDateSuffix = () => {
         const today = new Date();
@@ -307,70 +307,203 @@ function App() {
     };
 
     const exportDC = () => {
-        const headers = ["ID", "%", "Gerente Comercial", "Observaciones", "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", "Entregar al Gerente Comercial", "Motivo"];
-        const data = filteredOpps.map(opp => ({
-            "ID": opp.id,
-            "%": opp.percentage ? `${opp.percentage} %`: '',
-            "Gerente Comercial": opp.manager_name,
-            "Observaciones": opp.last_observation,
-            "Nombre de la cuenta": opp.account_name,
-            "Nombre de la oportunidad": opp.name,
-            "Estado": opp.status_name,
-            "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '',
-            "Motivo": motives.find(m => m.id === opp.motive_id)?.name || '',
-        }));
+        const headers = [
+            "ID", "%", "Gerente Comercial", "Observaciones", 
+            "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", 
+            "Entregar al Gerente Comercial", "Motivo"
+        ];
+    
+        const data = filteredOpps.map(opp => {
+            const motive = motives.find(m => m.id === opp.motive_id);
+            return {
+                "ID": opp.id,
+                "%": opp.percentage ? `${opp.percentage} %`: '',
+                "Gerente Comercial": opp.manager_name,
+                "Observaciones": opp.last_observation,
+                "Nombre de la cuenta": opp.account_name,
+                "Nombre de la oportunidad": opp.name,
+                "Estado": opp.status_name,
+                "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '',
+                "Motivo": motive ? motive.name : '',
+            };
+        });
+    
         const ws = XLSX.utils.json_to_sheet(data, { header: headers });
-        // (Styling logic remains the same)
+    
+        const getHexColor = (colorCode?: string) => {
+            switch (colorCode) {
+                case 'RED': return 'FFFF0000'; 
+                case 'YELLOW': return 'FFFFFF00'; 
+                case 'GREEN': return 'FF00FF00'; 
+                default: return 'FFFFFFFF'; 
+            }
+        };
+    
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        const headerStyle = {
+            fill: { fgColor: { rgb: "FFFFE0B2" } },
+            font: { bold: true, sz: 10 },
+            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        };
+    
+        const baseCellStyle = {
+            font: { sz: 10 },
+            alignment: { vertical: "center", wrapText: true },
+            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        };
+        
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            if (R === 0) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                    if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                    ws[cellRef].s = headerStyle;
+                }
+                continue; 
+            }
+            
+            const rowData = filteredOpps[R - 1]; 
+            if (!rowData) continue;
+    
+            const colorHex = getHexColor(rowData.color_code);
+            const colsToColor = [2, 3, 4];
+    
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' }; 
+                
+                ws[cellRef].s = { ...baseCellStyle };
+    
+                if (colsToColor.includes(C)) {
+                     ws[cellRef].s.fill = { fgColor: { rgb: colorHex } };
+                }
+            }
+        }
         ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "DC Export");
         XLSX.writeFile(wb, `export_dc${getDownloadDateSuffix()}.xlsx`);
-    };
+      };    
 
-    const exportPablo = () => {
-        const filteredForPablo = filteredOpps.filter(opp => opp.color_code === 'GREEN' || opp.color_code === 'YELLOW');
+      const exportPablo = () => {
+        const filteredForPablo = filteredOpps.filter(opp => 
+            opp.color_code === 'GREEN' || opp.color_code === 'YELLOW'
+        );
         const headers = ["ID", "%", "Gerente Comercial", "Observaciones", "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", "Entregar al Gerente Comercial", "Motivo"];
-        const data = filteredForPablo.map(opp => ({
-            "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
-            "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
-            "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '', "Motivo": motives.find(m => m.id === opp.motive_id)?.name || '',
-        }));
+        const data = filteredForPablo.map(opp => {
+            const motive = motives.find(m => m.id === opp.motive_id);
+            return {
+                "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
+                "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
+                "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '', "Motivo": motive ? motive.name : '',
+            };
+        });
         const ws = XLSX.utils.json_to_sheet(data, { header: headers });
-        // (Styling logic remains the same)
+        const getHexColor = (colorCode?: string) => {
+            switch (colorCode) { case 'YELLOW': return 'FFFFFF00'; case 'GREEN': return 'FF00FF00'; default: return 'FFFFFFFF'; }
+        };
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        const headerStyle = {
+            fill: { fgColor: { rgb: "FFFFE0B2" } }, font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        };
+        const baseCellStyle = {
+            font: { sz: 10 }, alignment: { vertical: "center", wrapText: true },
+            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        };
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            if (R === 0) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                    if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                    ws[cellRef].s = headerStyle;
+                }
+                continue; 
+            }
+            const rowData = filteredForPablo[R - 1]; if (!rowData) continue;
+            const colorHex = getHexColor(rowData.color_code);
+            const colsToColor = [2, 3, 4];
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                ws[cellRef].s = { ...baseCellStyle };
+                if (colsToColor.includes(C)) { ws[cellRef].s.fill = { fgColor: { rgb: colorHex } }; }
+            }
+        }
         ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Pablo Export");
         XLSX.writeFile(wb, `export_pablo${getDownloadDateSuffix()}.xlsx`);
-    };
+      };    
   
-    const exportJP = async () => {
+      const exportJP = async () => {
         const allOpps = await api.getOpportunities('ALL');
-        const headers = ["ID", "%", "Nombre de la Cuenta", "Nombre Oportunidad", "Gerente Comercial", "Equipo de Preventa-COE", "Fecha-Inicio (Comercial pasa a Preventa)", "Fecha-Enfrendimiento (Primer reunión con Preventa)", "Fecha-Alcance (Cierre del alcance)", "Fecha-COE (Aprobacion Coe)", "Fecha-Entrega (Fecha envío PP al comercial)", "Días (Fecha-Inicio y Fecha-COE)", "Días (Fecha-Inicio y Fecha-Entrega)", "Estado Final", "Motivo"];
+        const headers = [
+            "ID", "%", "Nombre de la Cuenta", "Nombre Oportunidad", "Gerente Comercial",
+            "Equipo de Preventa-COE", "Fecha-Inicio (Comercial pasa a Preventa)",
+            "Fecha-Enfrendimiento (Primer reunión con Preventa)", "Fecha-Alcance (Cierre del alcance)",
+            "Fecha-COE (Aprobacion Coe)", "Fecha-Entrega (Fecha envío PP al comercial)",
+            "Días (Fecha-Inicio y Fecha-COE)", "Días (Fecha-Inicio y Fecha-Entrega)",
+            "Estado Final", "Motivo"
+        ];
         const diffDays = (date1?: string, date2?: string) => {
             if (!date1 || !date2) return '';
             const d1 = new Date(date1); const d2 = new Date(date2);
             if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return '';
-            return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+            const diff = d2.getTime() - d1.getTime();
+            return Math.ceil(diff / (1000 * 60 * 60 * 24));
         };
-        const data = allOpps.map(opp => ({
-            "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Nombre de la Cuenta": opp.account_name, "Nombre Oportunidad": opp.name,
-            "Gerente Comercial": opp.manager_name, "Equipo de Preventa-COE": [opp.dc_name, opp.neg_name].filter(Boolean).join(' - ') || 'N/A',
-            "Fecha-Inicio (Comercial pasa a Preventa)": formatDate(opp.start_date),
-            "Fecha-Enfrendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
-            "Fecha-Alcance (Cierre del alcance)": formatDate(opp.scope_date),
-            "Fecha-COE (Aprobacion Coe)": formatDate(opp.coe_date),
-            "Fecha-Entrega (Fecha envío PP al comercial)": formatDate(opp.delivery_date),
-            "Días (Fecha-Inicio y Fecha-COE)": diffDays(opp.start_date, opp.coe_date),
-            "Días (Fecha-Inicio y Fecha-Entrega)": diffDays(opp.start_date, opp.delivery_date),
-            "Estado Final": opp.status_name, "Motivo": opp.motive_name,
-        }));
+        const data = allOpps.map(opp => {
+            const eqPreventa = [opp.dc_name, opp.neg_name].filter(Boolean).join(' - ');
+            return {
+                "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Nombre de la Cuenta": opp.account_name, "Nombre Oportunidad": opp.name,
+                "Gerente Comercial": opp.manager_name, "Equipo de Preventa-COE": eqPreventa || 'N/A',
+                "Fecha-Inicio (Comercial pasa a Preventa)": formatDate(opp.start_date),
+                "Fecha-Enfrendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
+                "Fecha-Alcance (Cierre del alcance)": formatDate(opp.scope_date),
+                "Fecha-COE (Aprobacion Coe)": formatDate(opp.coe_date),
+                "Fecha-Entrega (Fecha envío PP al comercial)": formatDate(opp.delivery_date),
+                "Días (Fecha-Inicio y Fecha-COE)": diffDays(opp.start_date, opp.coe_date),
+                "Días (Fecha-Inicio y Fecha-Entrega)": diffDays(opp.start_date, opp.delivery_date),
+                "Estado Final": opp.status_name, "Motivo": opp.motive_name,
+            };
+        });
         const ws = XLSX.utils.json_to_sheet(data, { header: headers });
-        // (Styling logic remains the same)
-        ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }];
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        const headerStyle = {
+            fill: { fgColor: { rgb: "B0E0E6" } }, font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        };
+        const baseCellStyle = {
+            font: { sz: 10 }, alignment: { vertical: "center", wrapText: true },
+            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+        };
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            if (R === 0) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                    if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                    ws[cellRef].s = headerStyle;
+                }
+                continue; 
+            }
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                ws[cellRef].s = { ...baseCellStyle };
+                if (C === 13) { ws[cellRef].s.fill = { fgColor: { rgb: "C6EFCE" } }; } 
+                if (C === 14) { ws[cellRef].s.fill = { fgColor: { rgb: "C6EFCE" } }; }
+            }
+        }
+        ws['!cols'] = [
+            { wch: 5 }, { wch: 5 }, { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 30 }, 
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }
+        ];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "JP Export");
         XLSX.writeFile(wb, `export_jp${getDownloadDateSuffix()}.xlsx`);
-    };
+      };    
 
     const searchElement = (
         <div className="relative w-full">
