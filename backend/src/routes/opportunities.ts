@@ -55,7 +55,9 @@ router.get('/opportunities', async (req, res) => {
         let query = `
             SELECT o.*, 
                    a.name as account_name, 
+                   i.name as industry_name,
                    s.name as status_name, 
+                   ot.name as opportunity_type_name,
                    m.name as motive_name,
                    e1.full_name as manager_name,
                    e2.full_name as dc_name,
@@ -64,7 +66,9 @@ router.get('/opportunities', async (req, res) => {
                    (SELECT text FROM opportunity_observations WHERE opportunity_id = o.id ORDER BY created_at DESC LIMIT 1) as last_observation
             FROM opportunities o
             JOIN accounts a ON o.account_id = a.id
+            LEFT JOIN industries i ON a.industry_id = i.id
             JOIN opportunity_statuses s ON o.status_id = s.id
+            LEFT JOIN opportunity_types ot ON o.opportunity_type_id = ot.id
             JOIN employees e1 ON o.manager_id = e1.id
             LEFT JOIN motives m ON o.motive_id = m.id
             LEFT JOIN employees e2 ON o.responsible_dc_id = e2.id

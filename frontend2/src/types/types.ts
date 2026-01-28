@@ -3,6 +3,7 @@ export interface Opportunity {
     name: string;
     account_id: number;
     account_name?: string;
+    industry_name?: string;
     status_id: number;
     status_name?: string;
     opportunity_type_id?: number;
