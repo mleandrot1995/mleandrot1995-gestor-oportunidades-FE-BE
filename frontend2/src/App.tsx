@@ -323,7 +323,7 @@ function App() {
                 "Nombre de la cuenta": opp.account_name,
                 "Nombre de la oportunidad": opp.name,
                 "Estado": opp.status_name,
-                "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '',
+                "Entregar al Gerente Comercial": opp.real_delivery_date ? formatDate(opp.real_delivery_date) : '',
                 "Motivo": motive ? motive.name : '',
             };
         });
@@ -383,7 +383,7 @@ function App() {
         ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "DC Export");
-        XLSX.writeFile(wb, `export_dc${getDownloadDateSuffix()}.xlsx`);
+        XLSX.writeFile(wb, `export_dir_${getDownloadDateSuffix()}.xlsx`);
       };    
 
       const exportPablo = () => {
@@ -396,7 +396,7 @@ function App() {
             return {
                 "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
                 "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
-                "Entregar al Gerente Comercial": opp.delivery_date ? formatDate(opp.delivery_date) : '', "Motivo": motive ? motive.name : '',
+                "Entregar al Gerente Comercial": opp.real_delivery_date ? formatDate(opp.real_delivery_date) : '', "Motivo": motive ? motive.name : '',
             };
         });
         const ws = XLSX.utils.json_to_sheet(data, { header: headers });
@@ -434,76 +434,105 @@ function App() {
         ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Pablo Export");
-        XLSX.writeFile(wb, `export_pablo${getDownloadDateSuffix()}.xlsx`);
+        XLSX.writeFile(wb, `export_DC_${getDownloadDateSuffix()}.xlsx`);
       };    
   
       const exportJP = async () => {
         const allOpps = await api.getOpportunities('ALL');
         const headers = [
-            "ID", "%", "Nombre de la Cuenta", "Nombre Oportunidad", "Gerente Comercial",
-            "Equipo de Preventa-COE", "Fecha-Inicio (Comercial pasa a Preventa)",
-            "Fecha-Enfrendimiento (Primer reunión con Preventa)", "Fecha-Alcance (Cierre del alcance)",
-            "Fecha-COE (Aprobacion Coe)", "Fecha-Entrega (Fecha envío PP al comercial)",
-            "Días (Fecha-Inicio y Fecha-COE)", "Días (Fecha-Inicio y Fecha-Entrega)",
-            "Estado Final", "Motivo"
+            "ID", "%", "Nombre de la cuenta", "Industria de la cuenta",
+            "Nombre de la oportunidad","Observaciones", "Estado", "Motivo", "K-rojo", "RFP (SI/NO)", "Prototipo (SI/NO)",
+            "IA (SI/NO)", "Anteproyecto (SI/NO)", "Tipo de ON", "Gerente Comercial", "Aprobador", "Resp Neg", "Resp Tecnico",
+            "Horas", "Plazo", "Fecha-Inicio (Comercial pasa a preventa)", 
+            "Fecha-Entendimiento (Primer reunión con Preventa)", "Fecha-Alcance (Cierre del alcance)",
+            "Fecha-COE (Aprobacion Coe)", "Fecha-Entrega (Fecha envío PP al comercial)", 
+            "Dias Inicio(Fecha-Inicio y Fecha-Entendimiento)", "Dias Entendimiento(Fecha-Entendimiento y Fecha-alcance)",
+            "Dias Elaboración(Fecha-alcance y Fecha-Entrega)"
         ];
+
         const diffDays = (date1?: string, date2?: string) => {
             if (!date1 || !date2) return '';
-            const d1 = new Date(date1); const d2 = new Date(date2);
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
             if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return '';
-            const diff = d2.getTime() - d1.getTime();
-            return Math.ceil(diff / (1000 * 60 * 60 * 24));
+            const utc1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+            const utc2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+            return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
         };
-        const data = allOpps.map(opp => {
-            const eqPreventa = [opp.dc_name, opp.neg_name].filter(Boolean).join(' - ');
-            return {
-                "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Nombre de la Cuenta": opp.account_name, "Nombre Oportunidad": opp.name,
-                "Gerente Comercial": opp.manager_name, "Equipo de Preventa-COE": eqPreventa || 'N/A',
-                "Fecha-Inicio (Comercial pasa a Preventa)": formatDate(opp.start_date),
-                "Fecha-Enfrendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
-                "Fecha-Alcance (Cierre del alcance)": formatDate(opp.scope_date),
-                "Fecha-COE (Aprobacion Coe)": formatDate(opp.coe_date),
-                "Fecha-Entrega (Fecha envío PP al comercial)": formatDate(opp.delivery_date),
-                "Días (Fecha-Inicio y Fecha-COE)": diffDays(opp.start_date, opp.coe_date),
-                "Días (Fecha-Inicio y Fecha-Entrega)": diffDays(opp.start_date, opp.delivery_date),
-                "Estado Final": opp.status_name, "Motivo": opp.motive_name,
-            };
-        });
+        
+        const toSiNo = (value?: boolean) => value ? 'SI' : 'NO';
+
+        const data = allOpps.map(opp => ({
+            "ID": opp.id,
+            "%": opp.percentage ? `${opp.percentage}%` : '',
+            "Nombre de la cuenta": opp.account_name || '',
+            "Industria de la cuenta": opp.industry_name || '',
+            "Nombre de la oportunidad": opp.name || '',
+            "Observaciones": opp.last_observation || '',
+            "Estado": opp.status_name || '',
+            "Motivo": opp.motive_name || '',
+            "K-rojo": opp.k_red_index || 0,
+            "RFP (SI/NO)": toSiNo(opp.has_rfp),
+            "Prototipo (SI/NO)": toSiNo(opp.has_prototype),
+            "IA (SI/NO)": toSiNo(opp.has_ia_proposal),
+            "Anteproyecto (SI/NO)": toSiNo(opp.has_anteproyecto),
+            "Tipo de ON": opp.opportunity_type_name || '',
+            "Gerente Comercial": opp.manager_name || '',
+            "Aprobador": opp.dc_name || '',
+            "Resp Neg": opp.neg_name || '',
+            "Resp Tecnico": opp.tec_name || '',
+            "Horas": opp.estimated_hours || '',
+            "Plazo": opp.estimated_term_months || '',
+            "Fecha-Inicio (Comercial pasa a preventa)": formatDate(opp.start_date),
+            "Fecha-Entendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
+            "Fecha-Alcance (Cierre del alcance)": formatDate(opp.scope_date),
+            "Fecha-COE (Aprobacion Coe)": formatDate(opp.coe_date),
+            "Fecha-Entrega (Fecha envío PP al comercial)": formatDate(opp.real_delivery_date),
+            "Dias Inicio(Fecha-Inicio y Fecha-Entendimiento)": diffDays(opp.start_date, opp.understanding_date),
+            "Dias Entendimiento(Fecha-Entendimiento y Fecha-alcance)": diffDays(opp.understanding_date, opp.scope_date),
+            "Dias Elaboración(Fecha-alcance y Fecha-Entrega)": diffDays(opp.scope_date, opp.real_delivery_date)
+        }));
+
         const ws = XLSX.utils.json_to_sheet(data, { header: headers });
-        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+
+        ws['!cols'] = [
+            { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 40 },
+            { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 10 },
+            { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 },
+            { wch: 8 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
+            { wch: 18 }, { wch: 15 }, { wch: 15 }
+        ];
+
         const headerStyle = {
-            fill: { fgColor: { rgb: "B0E0E6" } }, font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center", wrapText: true },
+            fill: { fgColor: { rgb: "B0E0E6" } },
+            font: { bold: true, sz: 10 },
+            alignment: { horizontal: "center", vertical: "center", wrapText: true },
             border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
         };
         const baseCellStyle = {
-            font: { sz: 10 }, alignment: { vertical: "center", wrapText: true },
+            font: { sz: 10 },
+            alignment: { vertical: "center", wrapText: true },
             border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
         };
+
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
         for (let R = range.s.r; R <= range.e.r; ++R) {
-            if (R === 0) {
-                for (let C = range.s.c; C <= range.e.c; ++C) {
-                    const cellRef = XLSX.utils.encode_cell({c: C, r: R});
-                    if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-                    ws[cellRef].s = headerStyle;
-                }
-                continue; 
-            }
             for (let C = range.s.c; C <= range.e.c; ++C) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
                 if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-                ws[cellRef].s = { ...baseCellStyle };
-                if (C === 13) { ws[cellRef].s.fill = { fgColor: { rgb: "C6EFCE" } }; } 
-                if (C === 14) { ws[cellRef].s.fill = { fgColor: { rgb: "C6EFCE" } }; }
+                
+                if (R === 0) {
+                    ws[cellRef].s = headerStyle;
+                } else {
+                    ws[cellRef].s = { ...baseCellStyle };
+                }
             }
         }
-        ws['!cols'] = [
-            { wch: 5 }, { wch: 5 }, { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 30 }, 
-            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }
-        ];
+
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "JP Export");
-        XLSX.writeFile(wb, `export_jp${getDownloadDateSuffix()}.xlsx`);
-      };    
+        XLSX.utils.book_append_sheet(wb, ws, "JP Report");
+        XLSX.writeFile(wb, `report_all_${getDownloadDateSuffix()}.xlsx`);
+      };  
 
     const searchElement = (
         <div className="relative w-full">
@@ -586,13 +615,13 @@ function App() {
                                  {activeTab !== 'TRASH' && (
                                     <div className="flex gap-1">
                                         <button onClick={exportPablo} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 border border-green-100 rounded hover:bg-green-100 text-[10px] font-bold" title="Exportar para Pablo">
-                                            <Download size={12}/> <span>PABLO</span>
+                                            <Download size={12}/> <span>DC</span>
                                         </button>
                                         <button onClick={exportJP} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded hover:bg-blue-100 text-[10px] font-bold" title="Exportar para JP">
-                                            <Download size={12}/> <span>JP</span>
+                                            <Download size={12}/> <span>ALL</span>
                                         </button>
                                         <button onClick={exportDC} className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded hover:bg-orange-100 text-[10px] font-bold" title="Exportar para DC">
-                                            <Download size={12}/> <span>DC</span>
+                                            <Download size={12}/> <span>DIR</span>
                                         </button>
                                     </div>
                                 )}
