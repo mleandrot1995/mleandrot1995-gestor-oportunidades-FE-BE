@@ -124,6 +124,16 @@ router.put('/opportunities/:id', async (req, res) => {
         const data = cleanData(OpportunitySchema.parse(req.body));
         if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
         
+        if (data.status_id) {
+            const statusResult = await db.query('SELECT name FROM opportunity_statuses WHERE id = $1', [data.status_id]);
+            if (statusResult.rows.length > 0) {
+                const statusName = statusResult.rows[0].name.toLowerCase();
+                if (statusName.includes('desestimada')) {
+                    data.is_archived = true;
+                }
+            }
+        }
+
         const result = await db.table('opportunities').update(id, data);
         if (!result) return res.status(404).json({ error: 'Not found' });
         res.json(result);
