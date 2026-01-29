@@ -317,7 +317,7 @@ function App() {
             const motive = motives.find(m => m.id === opp.motive_id);
             return {
                 "ID": opp.id,
-                "%": opp.percentage ? `${opp.percentage} %`: '',
+                "%": (opp.color_code === 'GREEN' && opp.percentage) ? `${opp.percentage} %` : '',
                 "Gerente Comercial": opp.manager_name,
                 "Observaciones": opp.last_observation,
                 "Nombre de la cuenta": opp.account_name,
@@ -394,7 +394,7 @@ function App() {
         const data = filteredForPablo.map(opp => {
             const motive = motives.find(m => m.id === opp.motive_id);
             return {
-                "ID": opp.id, "%": opp.percentage ? `${opp.percentage} %`: '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
+                "ID": opp.id, "%": (opp.color_code === 'GREEN' && opp.percentage) ? `${opp.percentage} %` : '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
                 "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
                 "Entregar al Gerente Comercial": opp.real_delivery_date ? formatDate(opp.real_delivery_date) : '', "Motivo": motive ? motive.name : '',
             };
@@ -464,7 +464,7 @@ function App() {
 
         const data = allOpps.map(opp => ({
             "ID": opp.id,
-            "%": opp.percentage ? `${opp.percentage}%` : '',
+            "%": (opp.color_code === 'GREEN' && opp.percentage) ? `${opp.percentage}%` : '',
             "Nombre de la cuenta": opp.account_name || '',
             "Industria de la cuenta": opp.industry_name || '',
             "Nombre de la oportunidad": opp.name || '',
