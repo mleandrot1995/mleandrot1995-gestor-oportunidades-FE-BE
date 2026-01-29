@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive, DocumentType } from '../types/types';
+import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from '../types/types';
 import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File, FilterX, XCircle, Eye, EyeOff } from 'lucide-react';
 import * as api from '../api';
 
