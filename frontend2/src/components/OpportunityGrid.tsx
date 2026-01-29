@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from '../types/types';
-import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File, FilterX, XCircle } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive, DocumentType } from '../types/types';
+import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File, FilterX, XCircle, Eye, EyeOff } from 'lucide-react';
 import * as api from '../api';
 
 interface Props {
@@ -64,6 +64,22 @@ const OpportunityGrid: React.FC<Props> = ({
     
     const isReadOnlyView = isHistoryView || isTrashView;
     const [focusedDate, setFocusedDate] = useState<string | null>(null);
+    const [minimizedCols, setMinimizedCols] = useState<Set<string>>(new Set());
+    const [showToggles, setShowToggles] = useState(false);
+
+    const resetColumns = useCallback(() => {
+        setMinimizedCols(new Set());
+        setShowToggles(false);
+    }, []);
+
+    const toggleColumn = useCallback((colId: string) => {
+        setMinimizedCols(prev => {
+            const next = new Set(prev);
+            if (next.has(colId)) next.delete(colId);
+            else next.add(colId);
+            return next;
+        });
+    }, []);
 
     // --- ESTADO INTERNO PARA FILTROS (Agregado) ---
     const [filters, setFilters] = useState({
@@ -290,6 +306,26 @@ const OpportunityGrid: React.FC<Props> = ({
         window.open(url, '_blank', 'noopener,noreferrer');
     }
 
+    const renderHeader = (id: string, label: string, widthClass: string) => {
+        if (minimizedCols.has(id)) return null;
+        return (
+            <th className={`${headerClass} ${widthClass}`}>
+                <div className="flex items-center justify-center gap-1 group/h">
+                    <span>{label}</span>
+                    {showToggles && (
+                        <button 
+                            onClick={() => toggleColumn(id)}
+                            className="p-1 hover:bg-gray-200 rounded-full transition-all text-gray-400 hover:text-red-600"
+                            title="Ocultar columna"
+                        >
+                            <EyeOff size={12} />
+                        </button>
+                    )}
+                </div>
+            </th>
+        );
+    };
+
     return (
         <div className="flex flex-col gap-2">
             
@@ -304,6 +340,28 @@ const OpportunityGrid: React.FC<Props> = ({
                 {/* ZONA DERECHA: Filtros alineados */}
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
                     
+                    {/* Botón Privacidad (Master Toggle) */}
+                    <button 
+                        onClick={() => setShowToggles(!showToggles)}
+                        className={`h-8 px-2 rounded-lg border transition-colors flex items-center gap-1 font-bold text-[10px] ${showToggles ? 'bg-blue-600 text-white border-blue-700 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        title={showToggles ? "Desactivar modo edición de visibilidad" : "Activar modo edición de visibilidad"}
+                    >
+                        <Eye size={14} />
+                        <span className="hidden sm:inline">Vistas</span>
+                    </button>
+
+                    {/* Botón Mostrar Todo (si hay ocultas) */}
+                    {minimizedCols.size > 0 && (
+                        <button 
+                            onClick={resetColumns}
+                            className="h-8 px-2 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 font-bold text-[10px] flex items-center gap-1 transition-colors shadow-sm"
+                            title="Mostrar todas las columnas ocultas"
+                        >
+                            <RotateCcw size={14} />
+                            <span className="hidden sm:inline">Restaurar</span>
+                        </button>
+                    )}
+
                     {/* Select de Cuenta */}
                     <div className="flex flex-col">
                         <select className={filterSelectClass} value={filters.accountId} onChange={(e) => handleFilterChange('accountId', e.target.value)} title="Cuenta">
@@ -375,20 +433,20 @@ const OpportunityGrid: React.FC<Props> = ({
 
             {/* --- TABLA ORIGINAL (Usando filteredData) --- */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-auto max-h-[calc(100vh-170px)]">
-                <table className="w-full border-collapse min-w-[1500px]">
+                <table className="w-full border-collapse table-fixed min-w-[1400px]">
                     <thead>
                         <tr>
                             <th className={`${headerClass} w-10`}>#</th>
-                            <th className={`${headerClass} w-20`}>%</th>
-                            <th className={`${headerClass} w-44`}>Cuenta</th>
-                            <th className={`${headerClass} w-52`}>Oportunidad</th>
-                            <th className={`${headerClass} w-52`}>Observaciones</th>
-                            <th className={`${headerClass} w-40`}>Estado</th>
-                            <th className={`${headerClass} w-44`}>Cronograma</th>
-                            <th className={`${headerClass} w-48`}>Equipo Preventa</th>
-                            <th className={`${headerClass} w-24`}>Días</th>
-                            <th className={`${headerClass} w-32`}>Proyecto</th>
-                            <th className={`${headerClass} w-32 border-r-0`}>Acciones</th>
+                            {renderHeader('percent', '%', 'w-20')}
+                            {renderHeader('account', 'Cuenta', 'w-32')}
+                            {renderHeader('opportunity', 'Oportunidad', 'w-40')}
+                            {renderHeader('observations', 'Observaciones', 'w-40')}
+                            {renderHeader('status', 'Estado', 'w-32')}
+                            {renderHeader('schedule', 'Cronograma', 'w-44')}
+                            {renderHeader('team', 'Equipo Preventa', 'w-40')}
+                            {renderHeader('days', 'Días', 'w-20')}
+                            {renderHeader('project', 'Proyecto', 'w-28')}
+                            <th className={`${headerClass} w-28 border-r-0`}>Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -396,10 +454,10 @@ const OpportunityGrid: React.FC<Props> = ({
                             <tr key={opp.id} className="hover:bg-gray-50/30 transition-colors group">
                                 <td className="px-1 py-1 text-center text-gray-500 text-[10px] font-bold border-b border-r border-gray-300">{opp.id}</td>
                                 
+                                { !minimizedCols.has('percent') && (
                                 <td className={`p-0 relative w-20 align-stretch h-full border-b border-r border-gray-300 transition-colors ${getSemaforoStyle(opp.color_code)}`}>
                                     <div className="flex items-center justify-center w-full h-full min-h-[80px] relative group/percent">
                                         <span className="relative z-10 font-black text-[12px]">{opp.percentage}%</span>
-                                        
                                         {!isReadOnlyView && (
                                             <div className="absolute inset-0 opacity-0 group-hover/percent:opacity-100 bg-white flex flex-col p-2 gap-1.5 transition-opacity z-20 shadow-lg justify-center border text-gray-800">
                                                 <div className="flex flex-col gap-0.5">
@@ -430,166 +488,183 @@ const OpportunityGrid: React.FC<Props> = ({
                                         )}
                                     </div>
                                 </td>
+                                )}
                                 
+                                { !minimizedCols.has('account') && (
                                 <td className={`${cellClass} text-center font-black py-1`}>
-                                    <select className={`${inlineInput} text-center text-sm font-bold`} value={opp.account_id} onChange={e => handleSaveField(opp.id, 'account_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
-                                        {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                                    </select>
-                                    
-                                    {/* INICIO DE LA MODIFICACIÓN */}
-                                    <div className="text-[10px] italic text-gray-500 mt-1 pl-1">
-                                        {accounts.find(a => a.id === opp.account_id)?.industry_name}
-                                    </div>
-                                    {/* FIN DE LA MODIFICACIÓN */}
-
+                                    <>
+                                        <div className="flex flex-col">
+                                            <select className={`${inlineInput} text-center text-sm font-bold`} value={opp.account_id} onChange={e => handleSaveField(opp.id, 'account_id', parseInt(e.target.value))} disabled={isReadOnlyView}>
+                                                {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                            </select>
+                                            <div className="text-[10px] italic text-gray-500 mt-1 pl-1">
+                                                {accounts.find(a => a.id === opp.account_id)?.industry_name}
+                                            </div>
+                                        </div>
+                                    </>
                                 </td>
+                                )}
                                 
+                                { !minimizedCols.has('opportunity') && (
                                 <td className={`${cellClass} py-1`}>
-                                    <div className="flex flex-col gap-1">
+                                        <div className="flex flex-col gap-1">
+                                            <textarea 
+                                                className={`${inlineInput} uppercase text-[9px] resize-none h-12 overflow-y-auto leading-tight p-0.5`} 
+                                                defaultValue={opp.name} 
+                                                onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
+                                                disabled={isReadOnlyView} 
+                                                style={{ fontSize: '12px' }}
+                                            />
+                                            <div className="flex gap-2 px-1 mt-1 flex-wrap">
+                                                <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_ia_proposal ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                                    <input type="checkbox" className="hidden" checked={opp.has_ia_proposal} onChange={e => handleSaveField(opp.id, 'has_ia_proposal', e.target.checked)} disabled={isReadOnlyView} />
+                                                    <Cpu size={12} className={opp.has_ia_proposal ? "text-purple-600" : "text-gray-400"} />
+                                                    IA
+                                                </label>
+                                                <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_prototype ? 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                                    <input type="checkbox" className="hidden" checked={opp.has_prototype} onChange={e => handleSaveField(opp.id, 'has_prototype', e.target.checked)} disabled={isReadOnlyView} />
+                                                    <Smartphone size={12} className={opp.has_prototype ? "text-blue-600" : "text-gray-400"} />
+                                                    PROTOTIPO
+                                                </label>
+                                                <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_rfp ? 'bg-pink-100 text-pink-700 border-pink-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                                    <input type="checkbox" className="hidden" checked={opp.has_rfp} onChange={e => handleSaveField(opp.id, 'has_rfp', e.target.checked)} disabled={isReadOnlyView} />
+                                                    <FileCheck size={12} className={opp.has_rfp ? "text-pink-600" : "text-gray-400"} />
+                                                    RFP
+                                                </label>
+                                                <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_anteproyecto ? 'bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
+                                                    <input type="checkbox" className="hidden" checked={opp.has_anteproyecto} onChange={e => handleSaveField(opp.id, 'has_anteproyecto', e.target.checked)} disabled={isReadOnlyView} />
+                                                    <File size={12} className={opp.has_anteproyecto ? "text-indigo-600" : "text-gray-400"} />
+                                                    ANTEPROY.
+                                                </label>
+                                            </div>
+                                        </div>
+                                </td>
+                                )}
+                                
+                                { !minimizedCols.has('observations') && (
+                                <td className={`${cellClass} py-1`}>
                                         <textarea 
-                                            className={`${inlineInput} uppercase text-[9px] resize-none h-12 overflow-y-auto leading-tight p-0.5`} 
-                                            defaultValue={opp.name} 
-                                            onBlur={e => handleSaveField(opp.id, 'name', e.target.value)} 
+                                            className={`${inlineInput} text-[14px] leading-tight resize-none h-20 font-medium text-gray-700 p-0.5 border border-gray-200 rounded focus:border-blue-300`} 
+                                            defaultValue={opp.last_observation || ''} 
+                                            onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} 
                                             disabled={isReadOnlyView} 
-                                            style={{ fontSize: '12px' }}
+                                            style={{ fontSize: '11px' }}
                                         />
-                                        <div className="flex gap-2 px-1 mt-1 flex-wrap">
-                                            <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_ia_proposal ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
-                                                <input type="checkbox" className="hidden" checked={opp.has_ia_proposal} onChange={e => handleSaveField(opp.id, 'has_ia_proposal', e.target.checked)} disabled={isReadOnlyView} />
-                                                <Cpu size={12} className={opp.has_ia_proposal ? "text-purple-600" : "text-gray-400"} />
-                                                IA
-                                            </label>
-                                            <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_prototype ? 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
-                                                <input type="checkbox" className="hidden" checked={opp.has_prototype} onChange={e => handleSaveField(opp.id, 'has_prototype', e.target.checked)} disabled={isReadOnlyView} />
-                                                <Smartphone size={12} className={opp.has_prototype ? "text-blue-600" : "text-gray-400"} />
-                                                PROTOTIPO
-                                            </label>
-                                            <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_rfp ? 'bg-pink-100 text-pink-700 border-pink-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
-                                                <input type="checkbox" className="hidden" checked={opp.has_rfp} onChange={e => handleSaveField(opp.id, 'has_rfp', e.target.checked)} disabled={isReadOnlyView} />
-                                                <FileCheck size={12} className={opp.has_rfp ? "text-pink-600" : "text-gray-400"} />
-                                                RFP
-                                            </label>
-                                            <label className={`text-[9px] font-bold flex items-center gap-1 cursor-pointer select-none px-1.5 py-0.5 rounded-md transition-all border ${opp.has_anteproyecto ? 'bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm' : 'text-gray-400 border-transparent hover:bg-gray-50'}`}>
-                                                <input type="checkbox" className="hidden" checked={opp.has_anteproyecto} onChange={e => handleSaveField(opp.id, 'has_anteproyecto', e.target.checked)} disabled={isReadOnlyView} />
-                                                <File size={12} className={opp.has_anteproyecto ? "text-indigo-600" : "text-gray-400"} />
-                                                ANTEPROY.
-                                            </label>
-                                        </div>
-                                    </div>
                                 </td>
+                                )}
                                 
-                                <td className={`${cellClass} max-w-xs py-1`}>
-                                    <textarea 
-                                        className={`${inlineInput} text-[14px] leading-tight resize-none h-20 font-medium text-gray-700 p-0.5 border border-gray-200 rounded focus:border-blue-300`} 
-                                        defaultValue={opp.last_observation || ''} 
-                                        onBlur={e => handleObservationUpdate(opp.id, e.target.value, opp.last_observation)} 
-                                        disabled={isReadOnlyView} 
-                                        style={{ fontSize: '11px' }}
-                                    />
-                                </td>
-                                
+                                { !minimizedCols.has('status') && (
                                 <td className={`${cellClass} text-center py-1`}>
-                                    <div className="flex flex-col items-center gap-1.5">
-                                        <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
-                                            <select 
-                                                className={`${inlineInput} text-center text-[9.9px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
-                                                value={opp.status_id} 
-                                                onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} 
-                                                disabled={isReadOnlyView}
-                                                style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                                        <div className="flex flex-col items-center gap-1.5">
+                                            <div className={`w-full rounded-md border p-1 transition-colors ${getStatusStyle(statuses.find(s => s.id === opp.status_id)?.name)}`}>
+                                                <select 
+                                                    className={`${inlineInput} text-center text-[9.9px] font-black uppercase !bg-transparent !text-inherit whitespace-normal break-words h-auto min-h-[24px] p-0.5`} 
+                                                    value={opp.status_id} 
+                                                    onChange={e => handleSaveField(opp.id, 'status_id', parseInt(e.target.value))} 
+                                                    disabled={isReadOnlyView}
+                                                    style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                                                >
+                                                    {statuses.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="w-full border border-gray-200 rounded-md bg-gray-50/50 p-1">
+                                                <select className={`${inlineInput} text-center text-[9.9px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
+                                                    <option value="">- Motivo -</option>
+                                                    {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center justify-center gap-1 w-full border border-red-100 rounded-md bg-red-50/30 p-1">
+                                                <span className="text-[9px] font-black text-red-600 uppercase">K-Rojo:</span>
+                                                <input type="number" className="w-10 text-[9px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
+                                            </div>
+                                        </div>
+                                </td>
+                                )}
+                                
+                                { !minimizedCols.has('schedule') && (
+                                <td className={`${cellClass} text-[10px] py-1 w-44 min-w-[176px] max-w-[176px]`}>
+                                        <div className="grid grid-cols-[80px,1fr] gap-x-1 gap-y-1">
+                                            <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Inicio:</span> 
+                                            {renderDateInput(opp.id, 'start_date', opp.start_date)}
+                                            
+                                            <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1 text-nowrap">Entendim.:</span> 
+                                            {renderDateInput(opp.id, 'understanding_date', opp.understanding_date)}
+                                            
+                                            <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Alcance:</span> 
+                                            {renderDateInput(opp.id, 'scope_date', opp.scope_date)}
+                                            
+                                            <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">COE:</span> 
+                                            {renderDateInput(opp.id, 'coe_date', opp.coe_date)}
+                                            
+                                            <span className="font-black text-green-600 uppercase text-[9px] text-right pr-1">Entrega:</span> 
+                                            {renderDateInput(opp.id, 'real_delivery_date', opp.real_delivery_date, "text-green-700")}
+                                        </div>
+                                </td>
+                                )}
+
+                                { !minimizedCols.has('team') && (
+                                <td className={`${cellClass} py-1`}>
+                                        <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
+                                            <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Gte:</span> 
+                                            <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
+                                                {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                            </select>
+                                            
+                                            <span className="font-black text-gray-500 uppercase text-[9px] pt-1 text-nowrap">Aprob:</span> 
+                                            <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
+                                                <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                            </select>
+
+                                            <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Neg:</span> 
+                                            <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
+                                                <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                            </select>
+
+                                            <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Tec:</span> 
+                                            <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
+                                                <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                                            </select>
+                                        </div>
+                                </td>
+                                )}
+                                
+                                { !minimizedCols.has('days') && (
+                                <td className={`${cellClass} text-center py-1`}>
+                                        <div className="flex flex-col gap-1 items-center">
+                                            <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Inicio:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.start_date, opp.understanding_date)}</span></div>
+                                            <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Entendim.:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.understanding_date, opp.scope_date)}</span></div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="font-black text-blue-600 text-[10px] uppercase">Elab.:</span>
+                                                <span className="font-black text-blue-700 text-[13px]">{getBusinessDays(opp.scope_date, opp.real_delivery_date)}</span>
+                                            </div>
+                                        </div>
+                                </td>
+                                )}
+                                
+                                { !minimizedCols.has('project') && (
+                                <td className={`${cellClass} py-1`}>
+                                        <div className="flex flex-col gap-1 items-center">
+                                            <div className="flex items-center gap-2 text-gray-900">
+                                                <Clock size={14} className="text-gray-400" />
+                                                <span className="text-[13px] font-bold">
+                                                    {opp.estimated_hours && opp.estimated_hours > 0 ? `${opp.estimated_hours} hs` : '- hs'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-gray-900">
+                                                <Calendar size={14} className="text-gray-400" />
+                                                <span className="text-[13px] font-bold">
+                                                    {opp.estimated_term_months && opp.estimated_term_months > 0 ? `${opp.estimated_term_months} meses` : '- meses'}
+                                                </span>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleOpenLink(opp.work_plan_link)}
+                                                className={`mt-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md border font-black text-[9px] uppercase tracking-widest shadow-sm transition-all ${opp.work_plan_link ? 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50' : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'}`}
                                             >
-                                                {statuses.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
-                                            </select>
+                                                <Link size={12}/> PLAN
+                                            </button>
                                         </div>
-                                        <div className="w-full border border-gray-200 rounded-md bg-gray-50/50 p-1">
-                                            <select className={`${inlineInput} text-center text-[9.9px] text-gray-700 !bg-transparent whitespace-normal break-words h-auto p-0.5`} value={opp.motive_id || ''} onChange={e => handleSaveField(opp.id, 'motive_id', e.target.value ? parseInt(e.target.value) : null)} disabled={isReadOnlyView}>
-                                                <option value="">- Motivo -</option>
-                                                {motives.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="flex items-center justify-center gap-1 w-full border border-red-100 rounded-md bg-red-50/30 p-1">
-                                            <span className="text-[9px] font-black text-red-600 uppercase">K-Rojo:</span>
-                                            <input type="number" className="w-10 text-[9px] font-black text-red-600 bg-transparent border-none text-center outline-none" defaultValue={opp.k_red_index || 0} onBlur={e => handleSaveField(opp.id, 'k_red_index', parseInt(e.target.value) || 0)} disabled={isReadOnlyView} />
-                                        </div>
-                                    </div>
                                 </td>
-                                
-                                <td className={`${cellClass} text-[10px] py-1`}>
-                                    <div className="grid grid-cols-[80px,1fr] gap-x-1 gap-y-1">
-                                        <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Inicio:</span> 
-                                        {renderDateInput(opp.id, 'start_date', opp.start_date)}
-                                        
-                                        <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1 text-nowrap">Entendim.:</span> 
-                                        {renderDateInput(opp.id, 'understanding_date', opp.understanding_date)}
-                                        
-                                        <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">Alcance:</span> 
-                                        {renderDateInput(opp.id, 'scope_date', opp.scope_date)}
-                                        
-                                        <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">COE:</span> 
-                                        {renderDateInput(opp.id, 'coe_date', opp.coe_date)}
-                                        
-                                        <span className="font-black text-green-600 uppercase text-[9px] text-right pr-1">Entrega:</span> 
-                                        {renderDateInput(opp.id, 'real_delivery_date', opp.real_delivery_date, "text-green-700")}
-                                    </div>
-                                </td>
-
-                                <td className={`${cellClass} py-1`}>
-                                    <div className="grid grid-cols-[35px,1fr] gap-x-1 gap-y-1 text-[12px]">
-                                        <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Gte:</span> 
-                                        <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.manager_id} onChange={e => handleSaveField(opp.id, 'manager_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
-                                            {filteredManagers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                        </select>
-                                        
-                                        <span className="font-black text-gray-500 uppercase text-[9px] pt-1 text-nowrap">Aprob:</span> 
-                                        <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_dc_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_dc_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
-                                            <option value="">-</option>{filteredDC.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                        </select>
-
-                                        <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Neg:</span> 
-                                        <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_business_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_business_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
-                                            <option value="">-</option>{filteredNeg.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                        </select>
-
-                                        <span className="font-black text-gray-500 uppercase text-[9px] pt-1">Tec:</span> 
-                                        <select className={`${inlineInput} text-[11px] p-0.5`} value={opp.responsible_tech_id || ''} onChange={e => handleSaveField(opp.id, 'responsible_tech_id', parseInt(e.target.value))} disabled={isReadOnlyView} style={{ fontSize: '11px' }}>
-                                            <option value="">-</option>{filteredTec.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                                        </select>
-                                    </div>
-                                </td>
-                                
-                                <td className={`${cellClass} text-center py-1`}>
-                                    <div className="flex flex-col gap-1 items-center">
-                                        <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Inicio:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.start_date, opp.understanding_date)}</span></div>
-                                        <div className="flex items-center gap-1"><span className="font-black text-gray-500 text-[10px] uppercase">Entendim.:</span><span className="font-black text-gray-900 text-[13px]">{getBusinessDays(opp.understanding_date, opp.scope_date)}</span></div>
-                                        <div className="mt-1 bg-blue-50/50 px-2 py-1 rounded border border-blue-200 flex flex-col items-center">
-                                            <span className="text-[7px] font-black text-blue-500 uppercase leading-none text-nowrap">Elaboración</span>
-                                            <span className="font-black text-blue-700 text-[12px]">{getBusinessDays(opp.scope_date, opp.real_delivery_date)}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <td className={`${cellClass} py-1`}>
-                                    <div className="flex flex-col gap-1 items-center">
-                                        <div className="flex items-center gap-2 text-gray-900">
-                                            <Clock size={14} className="text-gray-400" />
-                                            <span className="text-[13px] font-bold">
-                                                {opp.estimated_hours && opp.estimated_hours > 0 ? `${opp.estimated_hours} hs` : '- hs'}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-gray-900">
-                                            <Calendar size={14} className="text-gray-400" />
-                                            <span className="text-[13px] font-bold">
-                                                {opp.estimated_term_months && opp.estimated_term_months > 0 ? `${opp.estimated_term_months} meses` : '- meses'}
-                                            </span>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleOpenLink(opp.work_plan_link)}
-                                            className={`mt-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md border font-black text-[9px] uppercase tracking-widest shadow-sm transition-all ${opp.work_plan_link ? 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50' : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'}`}
-                                        >
-                                            <Link size={12}/> PLAN
-                                        </button>
-                                    </div>
-                                </td>
+                                )}
                                 
                                 <td className="px-2 py-1 text-center align-middle border-b border-gray-300">
                                     <div className="flex flex-col gap-1 items-center">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, MessageSquare, Plus, Calendar, Clock, Users, Info, FileText, CheckSquare, Square, Link as LinkIcon, Sparkles, Layout, AlertCircle, FileCheck, File } from 'lucide-react';
-import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Observation, Motive } from '../types/types';
+import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Observation, Motive, DocumentType } from '../types/types';
 import * as api from '../api';
 
 interface Props {
@@ -89,20 +89,25 @@ const EditModal: React.FC<Props> = ({
     };
 
     const validateSemaforo = (percent: number, color: string): boolean => {
-        if (color === 'RED' && percent !== 0) return false;
-        if (percent === 0 && color !== 'RED' && color !== 'NONE') return false;
-        if (color === 'YELLOW' && (percent < 50 || percent > 69)) return false;
-        if (color === 'GREEN' && (percent < 70 || percent > 100)) return false;
-        if (color === 'NONE' && percent > 49) return false;
-        return true;
+        switch (color) {
+            case 'RED':
+                return percent === 0;
+            case 'YELLOW':
+            case 'NONE':
+                return percent >= 0 && percent <= 69;
+            case 'GREEN':
+                return percent >= 70 && percent <= 100;
+            default:
+                return false;
+        }
     };
 
     const getRangeSuggestion = (color: string): string => {
         switch (color) {
             case 'RED': return 'Debe ser 0%';
-            case 'YELLOW': return 'Rango sugerido: 50% - 69%';
-            case 'GREEN': return 'Rango sugerido: 70% - 100%';
-            case 'NONE': return 'Rango sugerido: 0% - 49%';
+            case 'YELLOW': return 'Rango: 0% - 69%';
+            case 'GREEN': return 'Rango: 70% - 100%';
+            case 'NONE': return 'Rango: 0% - 69%';
             default: return '';
         }
     };
@@ -187,26 +192,18 @@ const EditModal: React.FC<Props> = ({
     const percentageEmpty = formData.percentage === undefined || formData.percentage === null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden text-gray-800">
-                <header className="flex justify-between items-center px-6 py-3 border-b bg-white sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-blue-600 p-3 rounded-xl shadow-lg text-white">
-                            <FileText size={24} />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight leading-none">
-                                {initialData && !isNew ? `EDITAR OPORTUNIDAD #${initialData.id}` : 'NUEVA OPORTUNIDAD'}
-                            </h2>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">Gestión de Pipeline Comercial</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors">
-                        <X size={28} />
+                <header className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
+                    <h2 className="text-xl font-bold text-gray-800">
+                        {initialData && !isNew ? `Editar Oportunidad #${initialData.id}` : 'Nueva Oportunidad'}
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        <X size={24} />
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-white">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
                     {validationMsg && (
                         <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 flex items-center gap-3 text-red-700 text-sm font-bold">
                             <AlertCircle size={20}/>
@@ -214,7 +211,7 @@ const EditModal: React.FC<Props> = ({
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* COL 1 */}
                         <section>
                             <h3 className={sectionTitleStyle}><Info size={14} className="inline mr-2"/> Datos Generales</h3>
@@ -239,36 +236,36 @@ const EditModal: React.FC<Props> = ({
                                         </select>
                                     </div>
                                 </div>
-                                <div className="bg-blue-50/50 rounded-2xl p-6 space-y-4 border border-blue-100/50">
-                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_ia_proposal', !formData.has_ia_proposal)} className="flex items-center gap-4 w-full text-left">
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${formData.has_ia_proposal ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                <div className="bg-gray-50 p-4 rounded space-y-3">
+                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_ia_proposal', !formData.has_ia_proposal)} className="flex items-center gap-3 w-full text-left">
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.has_ia_proposal ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-transparent'}`}>
                                             {formData.has_ia_proposal && <Plus size={14} strokeWidth={4}/>}
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                             <Sparkles size={14} className="text-purple-500"/> Propuesta con IA
                                         </span>
                                     </button>
-                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_prototype', !formData.has_prototype)} className="flex items-center gap-4 w-full text-left">
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${formData.has_prototype ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_prototype', !formData.has_prototype)} className="flex items-center gap-3 w-full text-left">
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.has_prototype ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-transparent'}`}>
                                             {formData.has_prototype && <Plus size={14} strokeWidth={4}/>}
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                             <Layout size={14} className="text-blue-500"/> Incluye Prototipo
                                         </span>
                                     </button>
-                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_rfp', !formData.has_rfp)} className="flex items-center gap-4 w-full text-left">
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${formData.has_rfp ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_rfp', !formData.has_rfp)} className="flex items-center gap-3 w-full text-left">
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.has_rfp ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-transparent'}`}>
                                             {formData.has_rfp && <Plus size={14} strokeWidth={4}/>}
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                             <FileCheck size={14} className="text-pink-500"/> Incluye RFP
                                         </span>
                                     </button>
-                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_anteproyecto', !formData.has_anteproyecto)} className="flex items-center gap-4 w-full text-left">
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${formData.has_anteproyecto ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                    <button disabled={isReadOnly} onClick={() => handleInputChange('has_anteproyecto', !formData.has_anteproyecto)} className="flex items-center gap-3 w-full text-left">
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.has_anteproyecto ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-transparent'}`}>
                                             {formData.has_anteproyecto && <Plus size={14} strokeWidth={4}/>}
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                             <File size={14} className="text-indigo-500"/> Incluye Anteproyecto
                                         </span>
                                     </button>
