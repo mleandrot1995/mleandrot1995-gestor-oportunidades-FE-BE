@@ -385,7 +385,7 @@ const OpportunityGrid: React.FC<Props> = ({
                             <th className={`${headerClass} w-52`}>Observaciones</th>
                             <th className={`${headerClass} w-40`}>Estado</th>
                             <th className={`${headerClass} w-44`}>Cronograma</th>
-                            <th className={`${headerClass} w-48`}>Equipo</th>
+                            <th className={`${headerClass} w-48`}>Equipo Preventa</th>
                             <th className={`${headerClass} w-24`}>Días</th>
                             <th className={`${headerClass} w-32`}>Proyecto</th>
                             <th className={`${headerClass} w-32 border-r-0`}>Acciones</th>
@@ -528,10 +528,7 @@ const OpportunityGrid: React.FC<Props> = ({
                                         <span className="font-black text-gray-500 uppercase text-[9px] text-right pr-1">COE:</span> 
                                         {renderDateInput(opp.id, 'coe_date', opp.coe_date)}
                                         
-                                        <span className="font-black text-blue-600 uppercase text-[9px] text-right pr-1 text-nowrap">Entrega Gte:</span> 
-                                        {renderDateInput(opp.id, 'delivery_date', opp.delivery_date, "text-blue-700")}
-                                        
-                                        <span className="font-black text-green-600 uppercase text-[9px] text-right pr-1">Real:</span> 
+                                        <span className="font-black text-green-600 uppercase text-[9px] text-right pr-1">Entrega:</span> 
                                         {renderDateInput(opp.id, 'real_delivery_date', opp.real_delivery_date, "text-green-700")}
                                     </div>
                                 </td>

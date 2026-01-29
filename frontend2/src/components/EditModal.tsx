@@ -43,7 +43,6 @@ const EditModal: React.FC<Props> = ({
                     understanding_date: formatDateForInput(initialData.understanding_date),
                     scope_date: formatDateForInput(initialData.scope_date),
                     coe_date: formatDateForInput(initialData.coe_date),
-                    delivery_date: formatDateForInput(initialData.delivery_date),
                     engagement_date: formatDateForInput(initialData.engagement_date),
                     real_delivery_date: formatDateForInput(initialData.real_delivery_date),
                 });
@@ -370,15 +369,14 @@ const EditModal: React.FC<Props> = ({
                                     <div><label className={labelStyle}>F. Entendim.</label><input readOnly={isReadOnly} type="date" className={inputClasses} value={formData.understanding_date || ''} onChange={e => handleInputChange('understanding_date', e.target.value)} /></div>
                                     <div><label className={labelStyle}>F. Alcance</label><input readOnly={isReadOnly} type="date" className={inputClasses} value={formData.scope_date || ''} onChange={e => handleInputChange('scope_date', e.target.value)} /></div>
                                     <div><label className={labelStyle}>F. COE</label><input readOnly={isReadOnly} type="date" className={inputClasses} value={formData.coe_date || ''} onChange={e => handleInputChange('coe_date', e.target.value)} /></div>
-                                    <div><label className={labelStyle}>F. Compromiso</label><input readOnly={isReadOnly} type="date" className={inputClasses} value={formData.delivery_date || ''} onChange={e => handleInputChange('delivery_date', e.target.value)} /></div>
-                                    <div><label className={`${labelStyle} text-green-600`}>F. Entrega Real</label><input readOnly={isReadOnly} type="date" className={`${inputClasses} !bg-white !text-gray-800 border border-green-200`} value={formData.real_delivery_date || ''} onChange={e => handleInputChange('real_delivery_date', e.target.value)} /></div>
+                                    <div><label className={labelStyle}>F. Entrega</label><input readOnly={isReadOnly} type="date" className={inputClasses} value={formData.real_delivery_date || ''} onChange={e => handleInputChange('real_delivery_date', e.target.value)} /></div>
                                 </div>
                             </div>
                             <div className="space-y-6">
                                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Dimensionamiento</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className={labelStyle}>Horas Estimadas</label><input readOnly={isReadOnly} type="number" className={inputClasses} value={formData.estimated_hours || ''} onChange={e => handleInputChange('estimated_hours', parseInt(e.target.value))} /></div>
-                                    <div><label className={labelStyle}>Plazo (Meses)</label><input readOnly={isReadOnly} type="number" className={inputClasses} value={formData.estimated_term_months || ''} onChange={e => handleInputChange('estimated_term_months', parseInt(e.target.value))} /></div>
+                                    <div><label className={labelStyle}>Plazo (Meses)</label><input readOnly={isReadOnly} type="number" step="any" className={inputClasses} value={formData.estimated_term_months ?? ''} onChange={e => handleInputChange('estimated_term_months', e.target.value === '' ? undefined : parseFloat(e.target.value))} /></div>
                                 </div>
                                 <div><label className={labelStyle}>Enlace Plan de Trabajo</label><input readOnly={isReadOnly} type="text" className={inputClasses} placeholder="https://..." value={formData.work_plan_link || ''} onChange={e => handleInputChange('work_plan_link', e.target.value)} /></div>
                             </div>

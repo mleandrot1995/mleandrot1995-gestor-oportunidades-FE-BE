@@ -200,7 +200,7 @@ function App() {
             if (isRed && highKRedIndex) return true;
   
             const status = (o.status_name || "").toUpperCase();
-            if (status.includes("GANADA") || status.includes("PERDIDA")) return true;
+            if (status.includes("GANADA") || status.includes("PERDIDA") || status.includes("DESESTIMADA")) return true;
   
             return false;
         });
@@ -452,12 +452,25 @@ function App() {
 
         const diffDays = (date1?: string, date2?: string) => {
             if (!date1 || !date2) return '';
-            const d1 = new Date(date1);
-            const d2 = new Date(date2);
-            if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return '';
-            const utc1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
-            const utc2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
-            return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
+            let startDate = new Date(date1);
+            let endDate = new Date(date2);
+            
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '';
+            if (startDate > endDate) return 0;
+
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+
+            let businessDays = 0;
+            let curDate = new Date(startDate.getTime());
+            while (curDate < endDate) {
+                curDate.setDate(curDate.getDate() + 1);
+                const day = curDate.getDay();
+                if (day !== 0 && day !== 6) {
+                    businessDays++;
+                }
+            }
+            return businessDays;
         };
         
         const toSiNo = (value?: boolean) => value ? 'SI' : 'NO';
