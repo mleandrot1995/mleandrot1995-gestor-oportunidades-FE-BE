@@ -8,9 +8,10 @@ import PasswordChangeModal from './components/PasswordChangeModal';
 import Admin from './components/Admin';
 import * as api from './api';
 import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from './types/types';
-import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft, LogOut, Users, GanttChart } from 'lucide-react';
+import { Plus, Layers, Search, Settings, Trash2, Download, ArrowRightLeft, LogOut, Users } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 import { jwtDecode } from 'jwt-decode';
+import logo from './assets/logo.png';
 
 interface DecodedToken {
     role: string;
@@ -572,9 +573,7 @@ function App() {
             <header className="bg-white border-b shadow-sm sticky top-0 z-30">
                 <div className="mx-auto px-4 py-2 flex justify-between items-center">
                     <div className="flex items-center space-x-2">
-                        <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-md">
-                           <GanttChart size={18} />
-                        </div>
+                        <img src={logo} alt="Logo" className="h-8 w-auto" />
                         <h1 className="text-lg font-black text-gray-800 tracking-tight uppercase">Gestor de oportunidades</h1>
                     </div>
                     

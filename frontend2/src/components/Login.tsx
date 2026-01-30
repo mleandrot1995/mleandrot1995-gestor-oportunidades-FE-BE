@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import * as api from '../api';
+import logo from '../assets/logo.png';
 
 interface LoginProps {
     onLogin: (token: string, firstLogin: boolean) => void;
@@ -25,14 +26,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-                <div className="bg-blue-600 p-8 text-center">
-                    <h2 className="text-2xl font-black text-white uppercase tracking-wider">Bienvenido</h2>
-                    <p className="text-blue-100 text-sm mt-2 font-medium">Gestor de Oportunidades</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100">
+                <div className="p-8 pb-0 text-center">
+                    <div className="flex justify-center mb-6">
+                        <img src={logo} alt="Logo" className="h-12 w-auto" />
+                    </div>
+                    <h2 className="text-xl font-black text-gray-800 uppercase tracking-wider">Bienvenido</h2>
+                    <p className="text-gray-400 text-xs mt-2 font-bold uppercase tracking-widest">Gestor de Oportunidades</p>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="p-8 pt-6 space-y-5">
                     {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">{error}</div>}
                     <div>
                         <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Email</label>
