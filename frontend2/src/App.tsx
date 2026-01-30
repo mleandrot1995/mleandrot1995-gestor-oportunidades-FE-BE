@@ -292,9 +292,9 @@ function App() {
         try {
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return '';
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear();
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+            const year = date.getUTCFullYear();
             return `${day}/${month}/${year}`;
         } catch { return ''; }
       };    
@@ -459,14 +459,11 @@ function App() {
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '';
             if (startDate > endDate) return 0;
 
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(0, 0, 0, 0);
-
             let businessDays = 0;
             let curDate = new Date(startDate.getTime());
             while (curDate < endDate) {
-                curDate.setDate(curDate.getDate() + 1);
-                const day = curDate.getDay();
+                curDate.setUTCDate(curDate.getUTCDate() + 1);
+                const day = curDate.getUTCDay();
                 if (day !== 0 && day !== 6) {
                     businessDays++;
                 }

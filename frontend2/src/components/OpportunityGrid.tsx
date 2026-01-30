@@ -41,14 +41,11 @@ const getBusinessDays = (d1?: string, d2?: string) => {
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return '-';
     if (startDate > endDate) return '-';
 
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
     let businessDays = 0;
     let curDate = new Date(startDate.getTime());
     while (curDate < endDate) {
-        curDate.setDate(curDate.getDate() + 1);
-        const day = curDate.getDay();
+        curDate.setUTCDate(curDate.getUTCDate() + 1);
+        const day = curDate.getUTCDay();
         if (day !== 0 && day !== 6) {
             businessDays++;
         }
