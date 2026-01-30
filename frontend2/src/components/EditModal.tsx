@@ -13,7 +13,6 @@ interface Props {
     accounts: Account[];
     teams: Employee[];
     statuses: OpportunityStatus[];
-    docTypes: DocumentType[];
     oppTypes: OpportunityType[];
 }
 
@@ -25,7 +24,7 @@ const formatDateForInput = (dateString?: string) => {
 };
 
 const EditModal: React.FC<Props> = ({ 
-    isOpen, onClose, onSave, initialData, isNew, isReadOnly, accounts, teams, statuses, docTypes, oppTypes
+    isOpen, onClose, onSave, initialData, isNew, isReadOnly, accounts, teams, statuses, oppTypes
 }) => {
     const [formData, setFormData] = useState<Partial<Opportunity>>({});
     const [observations, setObservations] = useState<Observation[]>([]);

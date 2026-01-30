@@ -16,7 +16,6 @@ interface Props {
     accounts: Account[];
     employees: Employee[];
     statuses: OpportunityStatus[];
-    docTypes: DocumentType[];
     oppTypes: OpportunityType[];
     motives: Motive[];
     // NUEVO: Recibimos el buscador desde el padre

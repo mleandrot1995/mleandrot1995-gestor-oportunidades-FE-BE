@@ -20,7 +20,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         try {
             const { token, first_login } = await api.login(email, password);
             onLogin(token, first_login);
-        } catch (err) {
+        } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión');
         }
     };
