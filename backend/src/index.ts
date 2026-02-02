@@ -8,6 +8,8 @@ import catalogsRouter from './routes/catalogs.js';
 import observationsRouter from './routes/observations.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
+import projectTeamRouter from './routes/projectTeam.js';
+import teamCatalogsRouter from './routes/teamCatalogs.js';
 import { authenticateToken } from './middleware/auth.js';
 import { db } from './db/index.js';
 
@@ -41,6 +43,8 @@ app.use('/api', accountsRouter);
 app.use('/api', catalogsRouter);
 app.use('/api', observationsRouter);
 app.use('/api', usersRouter);
+app.use('/api/project-team', projectTeamRouter);
+app.use('/api', teamCatalogsRouter);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

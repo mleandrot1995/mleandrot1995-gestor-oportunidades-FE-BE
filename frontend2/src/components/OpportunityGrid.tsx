@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Opportunity, Account, Employee, OpportunityStatus, OpportunityType, Motive } from '../types/types';
-import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File, FilterX, XCircle, Eye, EyeOff } from 'lucide-react';
+import { Edit2, Archive, Trash2, RotateCcw, Clock, Calendar, Link, Search, Cpu, Smartphone, FileCheck, File, FilterX, XCircle, Eye, EyeOff, Users } from 'lucide-react';
 import * as api from '../api';
+import ProjectTeamModal from './ProjectTeamModal';
 
 interface Props {
     data: Opportunity[];
@@ -62,6 +63,8 @@ const OpportunityGrid: React.FC<Props> = ({
     const [focusedDate, setFocusedDate] = useState<string | null>(null);
     const [minimizedCols, setMinimizedCols] = useState<Set<string>>(new Set());
     const [showToggles, setShowToggles] = useState(false);
+    const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+    const [selectedOppForTeam, setSelectedOppForTeam] = useState<Opportunity | null>(null);
 
     const resetColumns = useCallback(() => {
         setMinimizedCols(new Set());
@@ -671,10 +674,13 @@ const OpportunityGrid: React.FC<Props> = ({
                                                 </span>
                                             </div>
                                             <button 
-                                                onClick={() => handleOpenLink(opp.work_plan_link)}
-                                                className={`mt-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md border font-black text-[9px] uppercase tracking-widest shadow-sm transition-all ${opp.work_plan_link ? 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50' : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'}`}
+                                                onClick={() => {
+                                                    setSelectedOppForTeam(opp);
+                                                    setIsTeamModalOpen(true);
+                                                }}
+                                                className="mt-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md border font-black text-[9px] uppercase tracking-widest shadow-sm transition-all bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                                             >
-                                                <Link size={12}/> PLAN
+                                                <Users size={12}/> EQUIPO
                                             </button>
                                         </div>
                                 </td>
@@ -723,6 +729,18 @@ const OpportunityGrid: React.FC<Props> = ({
                     </tbody>
                 </table>
             </div>
+
+            {selectedOppForTeam && (
+                <ProjectTeamModal 
+                    opportunityId={selectedOppForTeam.id}
+                    opportunityName={selectedOppForTeam.name}
+                    isOpen={isTeamModalOpen}
+                    onClose={() => {
+                        setIsTeamModalOpen(false);
+                        setSelectedOppForTeam(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

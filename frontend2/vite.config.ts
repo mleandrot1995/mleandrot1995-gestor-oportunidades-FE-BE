@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    global: 'window',
+    'process.env': {},
+    'process.browser': true,
+  },
   server: {
     port: 5173,
     host: '0.0.0.0',
@@ -20,7 +25,13 @@ export default defineConfig({
       }
     }
   },
+  resolve: {
+    alias: {
+      stream: 'stream-browserify',
+      buffer: 'buffer',
+    },
+  },
   optimizeDeps: {
-    include: ['xlsx-js-style']
+    exclude: ['xlsx-js-style']
   }
 });
