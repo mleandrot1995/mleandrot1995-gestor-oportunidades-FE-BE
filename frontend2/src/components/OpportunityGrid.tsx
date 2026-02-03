@@ -735,6 +735,7 @@ const OpportunityGrid: React.FC<Props> = ({
                     opportunityId={selectedOppForTeam.id}
                     opportunityName={selectedOppForTeam.name}
                     isOpen={isTeamModalOpen}
+                    isReadOnly={isReadOnlyView}
                     onClose={() => {
                         setIsTeamModalOpen(false);
                         setSelectedOppForTeam(null);

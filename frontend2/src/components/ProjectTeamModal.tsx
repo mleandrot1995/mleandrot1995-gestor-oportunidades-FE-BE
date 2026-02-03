@@ -34,10 +34,11 @@ interface Props {
   opportunityId: number;
   opportunityName: string;
   isOpen: boolean;
+  isReadOnly: boolean;
   onClose: () => void;
 }
 
-const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isOpen, onClose }) => {
+const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isOpen, isReadOnly, onClose }) => {
   const [activeTab, setActiveTab] = useState<'team' | 'characteristics'>('team');
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [characteristics, setCharacteristics] = useState<ProjectCharacteristics>({});
@@ -297,23 +298,24 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                     <th className="p-3 border">Asignación</th>
                     <th className="p-3 border">Horas</th>
                     <th className="p-3 border">Plazo (meses)</th>
-                    <th className="p-3 border">Acciones</th>
+                    {!isReadOnly && <th className="p-3 border">Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {team.map((member, index) => (
                     <tr key={index} className="border-b">
-                      <td className="p-2 border"><input type="number" className="w-16 p-1 border rounded" value={member.quantity} onChange={(e) => handleChange(index, 'quantity', parseInt(e.target.value))} /></td>
-                      <td className="p-2 border"><select className="w-full p-1 border rounded" value={member.role_id} onChange={(e) => handleChange(index, 'role_id', parseInt(e.target.value))}><option value={0}>Seleccionar...</option>{catalogs.roles.filter(r => r.is_active || r.id === member.role_id).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></td>
-                      <td className="p-2 border"><select className="w-full p-1 border rounded" value={member.seniority_id} onChange={(e) => handleChange(index, 'seniority_id', parseInt(e.target.value))}><option value={0}>Seleccionar...</option>{catalogs.seniorities.filter(s => s.is_active || s.id === member.seniority_id).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></td>
+                      <td className="p-2 border"><input type="number" disabled={isReadOnly} className="w-16 p-1 border rounded" value={member.quantity} onChange={(e) => handleChange(index, 'quantity', parseInt(e.target.value))} /></td>
+                      <td className="p-2 border"><select disabled={isReadOnly} className="w-full p-1 border rounded" value={member.role_id} onChange={(e) => handleChange(index, 'role_id', parseInt(e.target.value))}><option value={0}>Seleccionar...</option>{catalogs.roles.filter(r => r.is_active || r.id === member.role_id).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></td>
+                      <td className="p-2 border"><select disabled={isReadOnly} className="w-full p-1 border rounded" value={member.seniority_id} onChange={(e) => handleChange(index, 'seniority_id', parseInt(e.target.value))}><option value={0}>Seleccionar...</option>{catalogs.seniorities.filter(s => s.is_active || s.id === member.seniority_id).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></td>
                       
                       {/* Columna Tecnología Principal */}
                       <td className="p-2 border w-48 relative">
                         <div className="relative" onClick={(e) => e.stopPropagation()}>
                           <input 
                             type="text"
+                            disabled={isReadOnly}
                             className="w-full p-1 border rounded outline-none focus:ring-2 focus:ring-blue-200 text-sm"
-                            placeholder="Buscar..."
+                            placeholder={isReadOnly ? "" : "Buscar..."}
                             value={activeSearch?.index === index && activeSearch.field === 'main_tech' 
                                 ? activeSearch.text 
                                 : (catalogs.technologies.find(t => t.id === member.main_technology_id)?.name || "")}
@@ -371,13 +373,14 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                                 }`}
                               >
                                 {entry.name}
-                                <X size={10} className="cursor-pointer hover:opacity-70" onClick={() => removeTech(index, i)} />
+                                {!isReadOnly && <X size={10} className="cursor-pointer hover:opacity-70" onClick={() => removeTech(index, i)} />}
                               </span>
                             ))}
                             <input 
                               type="text"
+                              disabled={isReadOnly}
                               className="flex-1 outline-none text-[11px] min-w-[60px]"
-                              placeholder={member.tech_entries?.length ? "" : "Buscar o pegar..."}
+                              placeholder={isReadOnly || member.tech_entries?.length ? "" : "Buscar o pegar..."}
                               value={activeSearch?.index === index && activeSearch.field === 'tech_entries' ? activeSearch.text : ""}
                               onFocus={(e) => {
                                 setActiveSearch({ index, field: 'tech_entries', text: e.target.value });
@@ -416,10 +419,12 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                           )}
                         </div>
                       </td>
-                      <td className="p-2 border"><select className="w-full p-1 border rounded" value={member.assignment} onChange={(e) => handleChange(index, 'assignment', e.target.value)}><option value="Full-time">Full-time</option><option value="Part-time">Part-time</option></select></td>
-                      <td className="p-2 border"><input type="number" className="w-20 p-1 border rounded" value={member.project_hours || ""} onChange={(e) => handleChange(index, 'project_hours', e.target.value === '' ? 0 : parseInt(e.target.value))} /></td>
-                      <td className="p-2 border"><input type="number" step="0.1" className="w-20 p-1 border rounded" value={member.project_term_months || ""} onChange={(e) => handleChange(index, 'project_term_months', e.target.value === '' ? 0 : parseFloat(e.target.value))} /></td>
-                      <td className="p-2 border text-center"><button onClick={() => removeMember(index)} className="text-red-500 hover:text-red-700 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 1 0 002 2h12a2 1 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button></td>
+                      <td className="p-2 border"><select disabled={isReadOnly} className="w-full p-1 border rounded" value={member.assignment} onChange={(e) => handleChange(index, 'assignment', e.target.value)}><option value="Full-time">Full-time</option><option value="Part-time">Part-time</option></select></td>
+                      <td className="p-2 border"><input type="number" disabled={isReadOnly} className="w-20 p-1 border rounded" value={member.project_hours || ""} onChange={(e) => handleChange(index, 'project_hours', e.target.value === '' ? 0 : parseInt(e.target.value))} /></td>
+                      <td className="p-2 border"><input type="number" step="0.1" disabled={isReadOnly} className="w-20 p-1 border rounded" value={member.project_term_months || ""} onChange={(e) => handleChange(index, 'project_term_months', e.target.value === '' ? 0 : parseFloat(e.target.value))} /></td>
+                      {!isReadOnly && (
+                        <td className="p-2 border text-center"><button onClick={() => removeMember(index)} className="text-red-500 hover:text-red-700 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 1 0 002 2h12a2 1 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button></td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -429,10 +434,12 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
             </div>
 
             <div className="flex justify-between items-center border-t pt-4">
-              <button onClick={addMember} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors font-medium flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h4a1 1 0 110 2h-4v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h4V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
-                Agregar Rol
-              </button>
+              {!isReadOnly && (
+                <button onClick={addMember} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors font-medium flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h4a1 1 0 110 2h-4v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h4V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                  Agregar Rol
+                </button>
+              )}
             </div>
             </>
             ) : (
@@ -442,6 +449,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Infraestructura</label>
                     <select 
+                      disabled={isReadOnly}
                       className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"
                       value={characteristics.infrastructure_type_id || ''}
                       onChange={(e) => handleCharacteristicChange('infrastructure_type_id', parseInt(e.target.value))}
@@ -453,6 +461,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Definición de Infraestructura</label>
                     <select 
+                      disabled={isReadOnly}
                       className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"
                       value={characteristics.defined_by || ''}
                       onChange={(e) => handleCharacteristicChange('defined_by', e.target.value)}
@@ -468,6 +477,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Metodología de Trabajo</label>
                     <select 
+                      disabled={isReadOnly}
                       className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"
                       value={characteristics.methodology_id || ''}
                       onChange={(e) => handleCharacteristicChange('methodology_id', parseInt(e.target.value))}
@@ -481,7 +491,8 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
             )}
 
             <div className="flex justify-end items-center border-t pt-4 gap-3">
-                <button onClick={onClose} className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">Cancelar</button>
+                <button onClick={onClose} className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">{isReadOnly ? "Cerrar" : "Cancelar"}</button>
+                {!isReadOnly && (
                 <button 
                   onClick={handleSave} 
                   disabled={isInvalidForm}
@@ -491,6 +502,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                 >
                   <Save size={16}/> Guardar Todo
                 </button>
+                )}
             </div>
           </div>
         )}
