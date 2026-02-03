@@ -272,7 +272,7 @@ const OpportunityGrid: React.FC<Props> = ({
     const inlineDate = "bg-transparent border-none text-[10px] font-bold p-0 cursor-pointer hover:bg-gray-100 rounded px-1 w-full text-gray-800";
     const actionBtnClass = "flex items-center gap-1.5 px-2 py-1 rounded transition-all text-[9px] font-bold uppercase tracking-tight w-full";
     // Nuevo estilo para select de filtros
-    const filterSelectClass = "text-[11px] h-8 border border-gray-200 rounded-lg px-2 bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 font-medium text-gray-700 min-w-[120px]";
+    const filterSelectClass = "text-[11px] h-8 border border-gray-200 rounded-lg px-2 bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 font-medium text-gray-700 w-full max-w-[140px] truncate";
 
     // Listas filtradas para los selects de edición (Lógica original)
     const filteredDC = employees.filter(e => e.role_name === 'Aprobador' && e.is_active).sort((a, b) => a.full_name.localeCompare(b.full_name));
@@ -386,7 +386,7 @@ const OpportunityGrid: React.FC<Props> = ({
 
                     {/* Select de Gerente */}
                     <div className="flex flex-col">
-                        <select className={`${filterSelectClass} !min-w-[100px]`} value={filters.managerId} onChange={(e) => handleFilterChange('managerId', e.target.value)} title="Gerente">
+                        <select className={`${filterSelectClass} !max-w-[110px]`} value={filters.managerId} onChange={(e) => handleFilterChange('managerId', e.target.value)} title="Gerente">
                             <option value="">Gte: Todos</option>
                             {filteredManagers.map(m => {
                                 if (!activeManagerIds.has(m.id) && filters.managerId !== m.id.toString()) return null;
@@ -397,7 +397,7 @@ const OpportunityGrid: React.FC<Props> = ({
 
                     {/* Select de Aprobador */}
                     <div className="flex flex-col">
-                        <select className={`${filterSelectClass} !min-w-[100px]`} value={filters.approverId} onChange={(e) => handleFilterChange('approverId', e.target.value)} title="Aprobador">
+                        <select className={`${filterSelectClass} !max-w-[110px]`} value={filters.approverId} onChange={(e) => handleFilterChange('approverId', e.target.value)} title="Aprobador">
                             <option value="">Apr: Todos</option>
                             {filteredDC.map(a => {
                                 if (!activeApproverIds.has(a.id) && filters.approverId !== a.id.toString()) return null;
@@ -408,7 +408,7 @@ const OpportunityGrid: React.FC<Props> = ({
 
                     {/* Select de Negocio */}
                     <div className="flex flex-col">
-                        <select className={`${filterSelectClass} !min-w-[100px]`} value={filters.businessId} onChange={(e) => handleFilterChange('businessId', e.target.value)} title="Negocio">
+                        <select className={`${filterSelectClass} !max-w-[110px]`} value={filters.businessId} onChange={(e) => handleFilterChange('businessId', e.target.value)} title="Negocio">
                             <option value="">Neg: Todos</option>
                             {filteredNeg.map(n => {
                                 if (!activeBusinessIds.has(n.id) && filters.businessId !== n.id.toString()) return null;
