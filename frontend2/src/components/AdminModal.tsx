@@ -21,7 +21,7 @@ const initialFormData = {
 
 const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
     // --- ESTADOS ---
-    const [activeSubTab, setActiveSubTab] = useState<'accounts' | 'statuses' | 'oppTypes' | 'roles' | 'employees' | 'motives' | 'industries' | 'teamRoles' | 'seniorities' | 'technologies'>('accounts');
+    const [activeSubTab, setActiveSubTab] = useState<'accounts' | 'statuses' | 'oppTypes' | 'roles' | 'employees' | 'motives' | 'industries' | 'teamRoles' | 'seniorities' | 'technologies' | 'infraTypes' | 'methodologies'>('accounts');
     
     // Listas de datos
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -34,6 +34,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const [teamRoles, setTeamRoles] = useState<any[]>([]);
     const [seniorities, setSeniorities] = useState<any[]>([]);
     const [technologies, setTechnologies] = useState<any[]>([]);
+    const [infraTypes, setInfraTypes] = useState<any[]>([]);
+    const [methodologies, setMethodologies] = useState<any[]>([]);
 
     // Estado de formularios y edición
     const [formData, setFormData] = useState<any>(initialFormData);
@@ -44,10 +46,11 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
     // --- EFECTOS Y CARGA DE DATOS ---
     const fetchData = async () => {
         try {
-            const [acc, sta, opp, rol, emp, mot, ind, tRol, sen, tec] = await Promise.all([
+            const [acc, sta, opp, rol, emp, mot, ind, tRol, sen, tec, infra, meth] = await Promise.all([
                 api.getAccounts(), api.getStatuses(), api.getOppTypes(),
                 api.getJobRoles(), api.getEmployees(), api.getMotives(), api.getIndustries(),
-                api.fetchApi('/team-roles'), api.fetchApi('/seniorities'), api.fetchApi('/technologies')
+                api.fetchApi('/team-roles'), api.fetchApi('/seniorities'), api.fetchApi('/technologies'),
+                api.fetchApi('/project-team/infrastructure-types'), api.fetchApi('/project-team/work-methodologies')
             ]);
             setAccounts(acc);
             setStatuses(sta);
@@ -59,6 +62,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             setTeamRoles(tRol);
             setSeniorities(sen);
             setTechnologies(tec);
+            setInfraTypes(infra);
+            setMethodologies(meth);
         } catch (err) {
             console.error("Error cargando datos del catálogo:", err);
             alert("Hubo un error al cargar los catálogos. Revise la consola.");
@@ -84,7 +89,7 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             setFormData({ name: '', contact_name: '', contact_email: '', is_active: true, industry_id: '' });
         } else if (activeSubTab === 'employees') {
             setFormData({ full_name: '', role_id: '', is_active: true });
-        } else if (['teamRoles', 'seniorities', 'technologies'].includes(activeSubTab)) {
+        } else if (['teamRoles', 'seniorities', 'technologies', 'infraTypes', 'methodologies'].includes(activeSubTab)) {
             setFormData({ name: '', is_active: true });
         } else {
             setFormData({ name: '' });
@@ -97,7 +102,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             const entityMap: any = {
                 accounts: 'accounts', statuses: 'statuses', oppTypes: 'opp-types',
                 roles: 'job-roles', employees: 'employees', motives: 'motives', industries: 'industries',
-                teamRoles: 'team-roles', seniorities: 'seniorities', technologies: 'technologies'
+                teamRoles: 'team-roles', seniorities: 'seniorities', technologies: 'technologies',
+                infraTypes: 'project-team/infrastructure-types', methodologies: 'project-team/work-methodologies'
             };
             const endpoint = entityMap[activeSubTab];
             let dataToSave = isInline ? inlineData : formData;
@@ -125,7 +131,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
             const entityMap: any = {
                 accounts: 'accounts', statuses: 'statuses', oppTypes: 'opp-types',
                 roles: 'job-roles', employees: 'employees', motives: 'motives', industries: 'industries',
-                teamRoles: 'team-roles', seniorities: 'seniorities', technologies: 'technologies'
+                teamRoles: 'team-roles', seniorities: 'seniorities', technologies: 'technologies',
+                infraTypes: 'project-team/infrastructure-types', methodologies: 'project-team/work-methodologies'
             };
             await api.deleteEntity(entityMap[activeSubTab], id);
             fetchData();
@@ -152,6 +159,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
         else if (activeSubTab === 'teamRoles') list = teamRoles;
         else if (activeSubTab === 'seniorities') list = seniorities;
         else if (activeSubTab === 'technologies') list = technologies;
+        else if (activeSubTab === 'infraTypes') list = infraTypes;
+        else if (activeSubTab === 'methodologies') list = methodologies;
 
         if (!searchTerm) return list;
 
@@ -223,7 +232,7 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 return (
                     <div className="space-y-3">
                         <input className={inputClasses} placeholder="Nombre" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                        {['teamRoles', 'seniorities', 'technologies'].includes(activeSubTab) && (
+                        {['teamRoles', 'seniorities', 'technologies', 'infraTypes', 'methodologies'].includes(activeSubTab) && (
                             <div className="flex items-center gap-2 pl-1 pt-1">
                                 <input type="checkbox" id="active-generic" className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500" 
                                        checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} />
@@ -303,7 +312,7 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 )}
                 
                 {/* --- Columna Estado --- */}
-                {(['accounts', 'employees', 'teamRoles', 'seniorities', 'technologies'].includes(activeSubTab)) && (
+                {(['accounts', 'employees', 'teamRoles', 'seniorities', 'technologies', 'infraTypes', 'methodologies'].includes(activeSubTab)) && (
                     <td className="px-3 py-2 text-center">
                         {inlineEditId === item.id ? (
                              <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" checked={inlineData.is_active} onChange={e => setInlineData({ ...inlineData, is_active: e.target.checked })} />
@@ -356,6 +365,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         <button onClick={() => setActiveSubTab('teamRoles')} className={navItemClasses('teamRoles')}>Roles Proyecto {activeSubTab === 'teamRoles' && <ChevronRight size={14}/>}</button>
                         <button onClick={() => setActiveSubTab('seniorities')} className={navItemClasses('seniorities')}>Seniorities {activeSubTab === 'seniorities' && <ChevronRight size={14}/>}</button>
                         <button onClick={() => setActiveSubTab('technologies')} className={navItemClasses('technologies')}>Tecnologías {activeSubTab === 'technologies' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('infraTypes')} className={navItemClasses('infraTypes')}>Infraestructura {activeSubTab === 'infraTypes' && <ChevronRight size={14}/>}</button>
+                        <button onClick={() => setActiveSubTab('methodologies')} className={navItemClasses('methodologies')}>Metodologías {activeSubTab === 'methodologies' && <ChevronRight size={14}/>}</button>
                     </nav>
                 </div>
 
@@ -370,6 +381,8 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                        activeSubTab === 'industries' ? 'Industrias' : 
                                        activeSubTab === 'teamRoles' ? 'Roles de Proyecto' :
                                        activeSubTab === 'seniorities' ? 'Seniorities' :
+                                       activeSubTab === 'infraTypes' ? 'Tipos de Infraestructura' :
+                                       activeSubTab === 'methodologies' ? 'Metodologías de Trabajo' :
                                        activeSubTab === 'technologies' ? 'Tecnologías' : 'Empleados'}
                         </h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 rounded-full transition-colors"><X size={20}/></button>
@@ -418,7 +431,7 @@ const AdminModal: React.FC<Props> = ({ isOpen, onClose }) => {
                                                 {activeSubTab === 'accounts' && <th className={headerTh}>Industria</th>}
                                                 {activeSubTab === 'accounts' && <th className={headerTh}>Contacto</th>}
                                                 {activeSubTab === 'employees' && <th className={headerTh}>Puesto</th>}
-                                                {(['accounts', 'employees', 'teamRoles', 'seniorities', 'technologies'].includes(activeSubTab)) && <th className={`${headerTh} text-center`}>Estado</th>}
+                                                {(['accounts', 'employees', 'teamRoles', 'seniorities', 'technologies', 'infraTypes', 'methodologies'].includes(activeSubTab)) && <th className={`${headerTh} text-center`}>Estado</th>}
                                                 <th className={`${headerTh} text-right w-32`}>Acciones</th>
                                             </tr>
                                         </thead>

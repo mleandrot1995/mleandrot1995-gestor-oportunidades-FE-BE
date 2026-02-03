@@ -1,85 +1,99 @@
--- 1. Catálogos para Equipo de Proyecto
-CREATE TABLE team_roles (
+-- Eliminar tablas si existen para permitir reejecución limpia
+DROP TABLE IF EXISTS project_characteristics;
+DROP TABLE IF EXISTS work_methodologies;
+DROP TABLE IF EXISTS infrastructure_types;
+DROP TABLE IF EXISTS project_team_technologies;
+DROP TABLE IF EXISTS project_team;
+DROP TABLE IF EXISTS technologies;
+DROP TABLE IF EXISTS seniorities;
+DROP TABLE IF EXISTS team_roles;
+
+-- 9. Tablas para Equipo de Proyecto (Project Team)
+CREATE TABLE IF NOT EXISTS team_roles (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE seniorities (
+CREATE TABLE IF NOT EXISTS seniorities (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(20) UNIQUE NOT NULL,
+    name VARCHAR(50) UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE technologies (
+CREATE TABLE IF NOT EXISTS technologies (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- 2. Tabla de Equipo de Proyecto
-CREATE TABLE project_team (
+CREATE TABLE IF NOT EXISTS project_team (
     id SERIAL PRIMARY KEY,
     opportunity_id INT NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,
-    quantity INT NOT NULL DEFAULT 1,
-    role_id INT NOT NULL REFERENCES team_roles(id),
-    seniority_id INT NOT NULL REFERENCES seniorities(id),
-    assignment VARCHAR(20) CHECK (assignment IN ('Full-time', 'Part-time')),
+    quantity INT DEFAULT 1,
+    role_id INT REFERENCES team_roles(id),
+    seniority_id INT REFERENCES seniorities(id),
+    main_technology_id INT REFERENCES technologies(id),
+    assignment VARCHAR(50) DEFAULT 'Full-time',
     project_hours INT,
-    project_term_months NUMERIC(10,1),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    project_term_months NUMERIC(10,1)
 );
 
--- 3. Tabla intermedia para Stack Tecnológico (Muchos a Muchos)
-CREATE TABLE project_team_technologies (
-    project_team_id INT NOT NULL REFERENCES project_team(id) ON DELETE CASCADE,
-    technology_id INT NOT NULL REFERENCES technologies(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS project_team_technologies (
+    project_team_id INT REFERENCES project_team(id) ON DELETE CASCADE,
+    technology_id INT REFERENCES technologies(id),
     PRIMARY KEY (project_team_id, technology_id)
 );
 
--- 4. Inserción de Roles de Equipo
+-- Datos Semilla para Equipo de Proyecto
 INSERT INTO team_roles (name) VALUES 
-    ('Project Manager/ Project Lider'),
-    ('Lider Técnico'),
-    ('Arquitecto'),
-    ('Analista Negocio'),
-    ('Especialista DevOps'),
-    ('Developer Back End'),
-    ('Developer Mobile'),
-    ('Developer Frontend'),
-    ('Data Engineer'),
-    ('Científica de Datos'),
-    ('Tester QA Manual'),
-    ('UX / UI Designer'),
-    ('Especialista en BI y Analítica'),
-    ('Scrum Master'),
-    ('Tester QA Automation')
-ON CONFLICT (name) DO NOTHING;
+('Desarrollador'), ('QA'), ('Arquitecto'), ('Líder Técnico'), ('Analista Funcional'), ('Scrum Master'),
+('Project Manager/Project Leader'), ('Developer Back-End'), ('Developer Front-End'), ('Developer Full Stack'), ('Developer Mobile'), ('Implementador'), ('DevOps Engineer'), ('Tester QA Automation'), ('Tester QA Manual'), ('UX/UI Designer'), ('Referente Técnico'), ('Analista de reclamos y siniestros'), ('Developer Base de Datos'), ('Developer WordPress'), ('Developer RPA'), ('Arquitecto RPA'), ('Líder Automation'), ('Líder Infra OnPrem/Cloud'), ('Ingeniero Cloud'), ('Administrador de Middleware'), ('Especialista en IA y Analítica'), ('Especialista en SO Linux'), ('Developer PHP'), ('AI Engineer'), ('DBA'), ('SysAdm'), ('Developer PL/SQL'), ('Líder Funcional/Analista Proyectos'), ('Developer Python'), ('It Operations Manager'), ('Help Desk Nivel 1'), ('Help Desk Nivel 2'), ('Design System'), ('Líder de Preventa')
+ON CONFLICT DO NOTHING;
 
--- 5. Inserción de Seniorities
 INSERT INTO seniorities (name) VALUES 
-    ('Sr'),
-    ('SSr'),
-    ('Jr')
-ON CONFLICT (name) DO NOTHING;
+('Trainee'), ('Junior'), ('Semi-Senior'), ('Senior'), ('Expert')
+ON CONFLICT DO NOTHING;
 
--- 6. Inserción de Tecnologías iniciales
 INSERT INTO technologies (name) VALUES 
-    ('Node.js'), ('React'), ('PostgreSQL'), ('Python'), ('Java'), 
-    ('AWS'), ('Azure'), ('Docker'), ('Kubernetes'), ('TypeScript'),
-    ('Angular'), ('Vue.js'), ('MongoDB'), ('SQL Server'), ('Oracle'),
-    ('PHP'), ('Laravel'), ('Swift'), ('Kotlin'), ('Flutter'),
-    ('React Native'), ('Go'), ('Rust'), ('Terraform'), ('Jenkins'),
-    ('Git'), ('Jira'), ('Confluence'), ('Figma'), ('Adobe XD'),
-    ('Power BI'), ('Tableau'), ('Spark'), ('Hadoop'), ('Kafka'),
-    ('REST API'), ('NET 8/9'), ('Diseño de Soluciones'), ('Bases de datos y componentes'),
-    ('GCP'), ('patrones de diseño'), ('Cloud'), ('frameworks / Lider tecnico con capacidad de desarrollo'),
-    ('Experiencia en Gestion de proyectos y relacion con Clientes'), ('Relevamiento de historias de usuarios'),
-    ('Generacion de Casos de uso'), ('Github'), ('CI/CD'), ('Diseño DB Relacional / NO Relacional'),
-    ('Automatización'), ('IaC'), ('monitoreo'), ('seguridad.Cloud'), ('Networking'),
-    ('.Net 8/9'), ('Experiencia en Base de datos Relaciones/NO relacionales'), ('Api Rest'),
-    ('React Js'), ('Html 5'), ('Javascript'), ('Network'), ('Selenium'), ('sonarqube'),
-    ('nodejs'), ('Cypress'), ('NET 9'), ('Testing.Platform'), ('TestCafe'),
-    ('Pruebas Manuales y funcionales')
-ON CONFLICT (name) DO NOTHING;
+('Java'), ('Python'), ('Node.js'), ('.NET'), ('React'), ('Angular'), ('Vue'), 
+('SQL'), ('NoSQL'), ('AWS'), ('Azure'), ('GCP'), ('Docker'), ('Kubernetes'),
+('PHP'), ('C#'), ('Go'), ('Ruby'), ('Swift'), ('Kotlin'), ('Rust'), ('Scala'),
+('TypeScript'), ('JavaScript'), ('HTML/CSS'), ('Sass/Less'), ('Tailwind'),
+('Bootstrap'), ('Material UI'), ('Ant Design'), ('Chakra UI'), ('Styled Components'),
+('Redux'), ('MobX'), ('Recoil'), ('Zustand'), ('React Query'), ('SWR'), ('Apollo Client'),
+('Next.js'), ('Nuxt.js'), ('Gatsby'), ('Remix'), ('Svelte'), ('SvelteKit'), ('Vite'),
+('Webpack'), ('Rollup'), ('Parcel'), ('Babel'), ('Jest'), ('Mocha'), ('Chai'), ('Jasmine'),
+('Cypress'), ('Playwright'), ('Puppeteer'), ('Selenium'), ('Testing Library'), ('Enzyme'),
+('Storybook'), ('Lighthouse'), ('ESLint'), ('Prettier'), ('Husky'), ('Lint Staged'),
+('Git'), ('GitHub'), ('GitLab'), ('Bitbucket'), ('Jira'), ('Trello'), ('Asana'), ('Slack'),
+('Discord'), ('Teams'), ('Zoom'), ('Google Meet'), ('Skype'), ('WebEx'), ('Outlook'),
+('SharePoint'), ('OneDrive'), ('Google Drive'), ('Dropbox'), ('Box'), ('Notion'), ('Evernote'),
+('N/A'), ('PL-SQL'), ('Android'), ('RPA'), ('Gestion Proyectos'), ('CI/CD'), ('Figma'), ('Relevamiento'), ('Machine Learning'), ('Power Automate')
+ON CONFLICT DO NOTHING;
+
+-- Nuevos catálogos para Características del Proyecto
+CREATE TABLE IF NOT EXISTS infrastructure_types (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS work_methodologies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS project_characteristics (
+    id SERIAL PRIMARY KEY,
+    opportunity_id INT NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,
+    infrastructure_type_id INT REFERENCES infrastructure_types(id),
+    defined_by VARCHAR(50), -- 'Definida por el cliente' o 'Definida por CFOTech'
+    methodology_id INT REFERENCES work_methodologies(id),
+    UNIQUE(opportunity_id)
+);
+
+-- Datos Semilla para Características del Proyecto
+INSERT INTO infrastructure_types (name) VALUES ('Cloud AWS'), ('Cloud Azure'), ('Cloud GCP'), ('On-Premise'), ('Híbrida') ON CONFLICT DO NOTHING;
+INSERT INTO work_methodologies (name) VALUES ('Agile'), ('Scrum'), ('Llave en mano'), ('Kanban'), ('Waterfall') ON CONFLICT DO NOTHING;

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { X } from 'lucide-react';
+import { X, Users, FileText, Save } from 'lucide-react';
 
 interface CatalogItem {
   id: number;
@@ -17,10 +17,17 @@ interface TeamMember {
   quantity: number;
   role_id: number;
   seniority_id: number;
+  main_technology_id?: number | null; // Nuevo campo
   assignment: 'Full-time' | 'Part-time';
   project_hours: number;
   project_term_months: number;
   tech_entries: TeamTech[];
+}
+
+interface ProjectCharacteristics {
+  infrastructure_type_id?: number;
+  defined_by?: 'Definida por el cliente' | 'Definida por CFOTech';
+  methodology_id?: number;
 }
 
 interface Props {
@@ -31,14 +38,19 @@ interface Props {
 }
 
 const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isOpen, onClose }) => {
+  const [activeTab, setActiveTab] = useState<'team' | 'characteristics'>('team');
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [catalogs, setCatalogs] = useState<{ roles: CatalogItem[], seniorities: CatalogItem[], technologies: CatalogItem[] }>({
+  const [characteristics, setCharacteristics] = useState<ProjectCharacteristics>({});
+  const [catalogs, setCatalogs] = useState<{ roles: CatalogItem[], seniorities: CatalogItem[], technologies: CatalogItem[], infrastructure_types: CatalogItem[], work_methodologies: CatalogItem[] }>({
     roles: [],
     seniorities: [],
-    technologies: []
+    technologies: [],
+    infrastructure_types: [],
+    work_methodologies: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeSearch, setActiveSearch] = useState<{index: number, text: string} | null>(null);
+  const [activeSearch, setActiveSearch] = useState<{index: number, field: 'tech_entries' | 'main_tech', text: string} | null>(null);
+  const isSelecting = useRef(false);
 
   useEffect(() => {
     const handleClickOutside = () => setActiveSearch(null);
@@ -60,12 +72,14 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
   const fetchData = async () => {
     try {
       const headers = getAuthHeaders();
-      const [catalogsRes, teamRes] = await Promise.all([
+      const [catalogsRes, teamRes, charRes] = await Promise.all([
         axios.get('/api/project-team/catalogs', { headers }),
-        axios.get(`/api/project-team/${opportunityId}`, { headers })
+        axios.get(`/api/project-team/${opportunityId}`, { headers }),
+        axios.get(`/api/project-team/${opportunityId}/characteristics`, { headers })
       ]);
       
       setCatalogs(catalogsRes.data);
+      setCharacteristics(charRes.data || {});
       
       const teamData = teamRes.data.map((m: any) => ({
         ...m,
@@ -86,6 +100,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
     quantity: 1,
     role_id: 0,
     seniority_id: 0,
+    main_technology_id: null,
     assignment: 'Full-time',
     project_hours: 0,
     project_term_months: 0,
@@ -167,7 +182,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
     });
 
     handleChange(index, 'tech_entries', newEntries);
-    setActiveSearch(null);
+    // setActiveSearch(null); // No cerrar para permitir seguir editando si es necesario, o cerrar si se prefiere
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -188,7 +203,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
           handleChange(index, 'tech_entries', [...currentEntries, { name: text }]);
         }
       }
-      setActiveSearch({ index, text: "" });
+      setActiveSearch({ index, field: 'tech_entries', text: "" });
     }
   };
 
@@ -196,6 +211,10 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
     const updated = [...(team[index].tech_entries || [])];
     updated.splice(techIndex, 1);
     handleChange(index, 'tech_entries', updated);
+  };
+
+  const handleCharacteristicChange = (field: keyof ProjectCharacteristics, value: any) => {
+    setCharacteristics(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
@@ -212,6 +231,11 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
       await axios.post(`/api/project-team/${opportunityId}`, dataToSave, {
         headers: getAuthHeaders()
       });
+
+      await axios.post(`/api/project-team/${opportunityId}/characteristics`, characteristics, {
+        headers: getAuthHeaders()
+      });
+
       onClose();
     } catch (error: any) {
       const msg = error.response?.data?.error || (error.response?.status === 401 ? 'Sesión expirada o no autorizada' : 'Error al guardar el equipo');
@@ -225,7 +249,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
     const hasTech = (m.tech_entries || []).length > 0;
     const hasInvalidTechTags = (m.tech_entries || []).some(e => !e.id);
     // Una fila es inválida si se empezó a completar (tiene rol, seniority o tech) pero le falta el rol o el seniority
-    const isRowStarted = hasTech || m.role_id !== 0 || m.seniority_id !== 0;
+    const isRowStarted = hasTech || m.role_id !== 0 || m.seniority_id !== 0 || !!m.main_technology_id;
     const isMissingInfo = m.role_id === 0 || m.seniority_id === 0;
     
     return hasInvalidTechTags || (isRowStarted && isMissingInfo);
@@ -235,14 +259,32 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-7xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h2 className="text-2xl font-bold text-gray-800">Estimación de Equipo: {opportunityName}</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Proyecto: {opportunityName}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6 border-b border-gray-200">
+          <button 
+            onClick={() => setActiveTab('team')}
+            className={`pb-2 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'team' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <Users size={16}/> Equipo
+          </button>
+          <button 
+            onClick={() => setActiveTab('characteristics')}
+            className={`pb-2 px-4 font-bold text-sm flex items-center gap-2 transition-colors ${activeTab === 'characteristics' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <FileText size={16}/> Características
+          </button>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-10"><p className="text-lg text-gray-600">Cargando datos...</p></div>
         ) : (
           <div className="space-y-6">
+            {activeTab === 'team' ? (
+            <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left border">
                 <thead className="bg-gray-50 text-gray-700 font-semibold uppercase text-xs">
@@ -250,6 +292,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                     <th className="p-3 border">Cant.</th>
                     <th className="p-3 border">Rol</th>
                     <th className="p-3 border">Seniority</th>
+                    <th className="p-3 border">Tecnología Principal</th>
                     <th className="p-3 border">Stack Tecnológico</th>
                     <th className="p-3 border">Asignación</th>
                     <th className="p-3 border">Horas</th>
@@ -263,6 +306,60 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                       <td className="p-2 border"><input type="number" className="w-16 p-1 border rounded" value={member.quantity} onChange={(e) => handleChange(index, 'quantity', parseInt(e.target.value))} /></td>
                       <td className="p-2 border"><select className="w-full p-1 border rounded" value={member.role_id} onChange={(e) => handleChange(index, 'role_id', parseInt(e.target.value))}><option value={0}>Seleccionar...</option>{catalogs.roles.filter(r => r.is_active || r.id === member.role_id).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></td>
                       <td className="p-2 border"><select className="w-full p-1 border rounded" value={member.seniority_id} onChange={(e) => handleChange(index, 'seniority_id', parseInt(e.target.value))}><option value={0}>Seleccionar...</option>{catalogs.seniorities.filter(s => s.is_active || s.id === member.seniority_id).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></td>
+                      
+                      {/* Columna Tecnología Principal */}
+                      <td className="p-2 border w-48 relative">
+                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                          <input 
+                            type="text"
+                            className="w-full p-1 border rounded outline-none focus:ring-2 focus:ring-blue-200 text-sm"
+                            placeholder="Buscar..."
+                            value={activeSearch?.index === index && activeSearch.field === 'main_tech' 
+                                ? activeSearch.text 
+                                : (catalogs.technologies.find(t => t.id === member.main_technology_id)?.name || "")}
+                            onFocus={(e) => setActiveSearch({ index, field: 'main_tech', text: e.target.value })}
+                            onChange={(e) => setActiveSearch({ index, field: 'main_tech', text: e.target.value })}
+                            onBlur={() => {
+                                setTimeout(() => {
+                                    if (isSelecting.current) return;
+
+                                    if (activeSearch?.index === index && activeSearch.field === 'main_tech') {
+                                        const text = activeSearch.text.trim();
+                                        const match = catalogs.technologies.find(t => t.name.toLowerCase() === text.toLowerCase());
+                                        
+                                        if (match) {
+                                            handleChange(index, 'main_technology_id', match.id);
+                                        } else {
+                                            handleChange(index, 'main_technology_id', null);
+                                        }
+                                        setActiveSearch(null);
+                                    }
+                                }, 200);
+                            }}
+                          />
+                          {activeSearch?.index === index && activeSearch.field === 'main_tech' && (
+                            <div className="absolute z-[9999] left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {catalogs.technologies
+                                .filter(t => t.name.toLowerCase().includes(activeSearch.text.toLowerCase()) && t.is_active)
+                                .map(t => (
+                                  <div 
+                                    key={t.id}
+                                    className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-xs"
+                                    onMouseDown={() => {
+                                      isSelecting.current = true;
+                                      handleChange(index, 'main_technology_id', t.id);
+                                      setActiveSearch(null);
+                                      setTimeout(() => isSelecting.current = false, 300);
+                                    }}
+                                  >
+                                    {t.name}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
                       <td className="p-2 border w-80 relative" style={{ overflow: 'visible' }}>
                         <div className="relative" onClick={(e) => { e.stopPropagation(); }}>
                           <div className="flex flex-wrap gap-1 p-1 border rounded bg-white min-h-[38px] focus-within:ring-2 focus-within:ring-blue-200">
@@ -281,17 +378,17 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                               type="text"
                               className="flex-1 outline-none text-[11px] min-w-[60px]"
                               placeholder={member.tech_entries?.length ? "" : "Buscar o pegar..."}
-                              value={activeSearch?.index === index ? activeSearch.text : ""}
+                              value={activeSearch?.index === index && activeSearch.field === 'tech_entries' ? activeSearch.text : ""}
                               onFocus={(e) => {
-                                setActiveSearch({ index, text: e.target.value });
+                                setActiveSearch({ index, field: 'tech_entries', text: e.target.value });
                               }}
-                              onChange={(e) => setActiveSearch({ index, text: e.target.value })}
+                              onChange={(e) => setActiveSearch({ index, field: 'tech_entries', text: e.target.value })}
                               onPaste={(e) => handlePaste(index, e)}
                               onKeyDown={(e) => handleKeyDown(index, e)}
                             />
                           </div>
                           
-                          {activeSearch?.index === index && activeSearch.text.trim().length > 0 && (
+                          {activeSearch?.index === index && activeSearch.field === 'tech_entries' && activeSearch.text.trim().length > 0 && (
                             <div className="absolute z-[9999] left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-2xl max-h-60 overflow-y-auto min-w-[250px]">
                               {catalogs.technologies
                                 .filter(t => {
@@ -306,7 +403,7 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                                       className="px-3 py-2 hover:bg-blue-600 hover:text-white cursor-pointer text-[11px] border-b border-gray-100 last:border-none transition-colors"
                                       onClick={() => {
                                         handleTechChange(index, t.id);
-                                        setActiveSearch({ index, text: "" });
+                                        setActiveSearch({ index, field: 'tech_entries', text: "" });
                                       }}
                                     >
                                       {t.name}
@@ -336,18 +433,64 @@ const ProjectTeamModal: React.FC<Props> = ({ opportunityId, opportunityName, isO
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h4a1 1 0 110 2h-4v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h4V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
                 Agregar Rol
               </button>
-              <div className="flex gap-3">
+            </div>
+            </>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4">
+                <div className="space-y-4">
+                  <h3 className="font-bold text-gray-700 border-b pb-2">Infraestructura</h3>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Infraestructura</label>
+                    <select 
+                      className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"
+                      value={characteristics.infrastructure_type_id || ''}
+                      onChange={(e) => handleCharacteristicChange('infrastructure_type_id', parseInt(e.target.value))}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {catalogs.infrastructure_types.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Definición de Infraestructura</label>
+                    <select 
+                      className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"
+                      value={characteristics.defined_by || ''}
+                      onChange={(e) => handleCharacteristicChange('defined_by', e.target.value)}
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="Definida por el cliente">Definida por el cliente</option>
+                      <option value="Definida por CFOTech">Definida por CFOTech</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="font-bold text-gray-700 border-b pb-2">Metodología</h3>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Metodología de Trabajo</label>
+                    <select 
+                      className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-200 outline-none"
+                      value={characteristics.methodology_id || ''}
+                      onChange={(e) => handleCharacteristicChange('methodology_id', parseInt(e.target.value))}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {catalogs.work_methodologies.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end items-center border-t pt-4 gap-3">
                 <button onClick={onClose} className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">Cancelar</button>
                 <button 
                   onClick={handleSave} 
                   disabled={isInvalidForm}
-                  className={`px-8 py-2 rounded-md transition-all shadow-md font-bold ${
+                  className={`px-8 py-2 rounded-md transition-all shadow-md font-bold flex items-center gap-2 ${
                     isInvalidForm ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  Guardar Equipo
+                  <Save size={16}/> Guardar Todo
                 </button>
-              </div>
             </div>
           </div>
         )}

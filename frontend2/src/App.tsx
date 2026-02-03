@@ -381,13 +381,25 @@ function App() {
                 }
             }
         }
+
         ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "DC Export");
         XLSX.writeFile(wb, `export_dir_${getDownloadDateSuffix()}.xlsx`);
       };    
 
-      const exportPablo = () => {
+      const exportPablo = async () => {
+        // Fetch Team Data for the second sheet
+        let teams: any[] = [];
+        let characteristics: any[] = [];
+        try {
+            const teamDataRes = await api.fetchApi('/project-team/export-all');
+            teams = teamDataRes.teams;
+            characteristics = teamDataRes.characteristics;
+        } catch (e) {
+            console.error("Error fetching team export data", e);
+        }
+
         const filteredForPablo = filteredOpps.filter(opp => 
             opp.color_code === 'GREEN' || opp.color_code === 'YELLOW'
         );
@@ -432,9 +444,111 @@ function App() {
                 if (colsToColor.includes(C)) { ws[cellRef].s.fill = { fgColor: { rgb: colorHex } }; }
             }
         }
+
+        // --- Prepare Team & Arq Sheet ---
+        const teamHeaders = [
+            "ID", "%", "Nombre de la cuenta", "Nombre de la oportunidad", "Observaciones",
+            "Rol", "Rol Nvo", "Seniority", "Tecnología Ppal", "Cantidad", "Asignación", "Stack Tecnológico",
+            "Infraestructura", "Define Infra", "Metodología de trabajo"
+        ];
+
+        const teamSheetData: any[] = [];
+        const merges: any[] = [];
+        let currentRow = 1; // Start after header
+
+        filteredForPablo.forEach(opp => {
+            const oppTeams = teams.filter((t: any) => t.opportunity_id === opp.id);
+            const oppChar = characteristics.find((c: any) => c.opportunity_id === opp.id);
+            
+            const rowCount = Math.max(oppTeams.length, 1);
+            
+            const baseData = {
+                "ID": opp.id,
+                "%": (opp.color_code === 'GREEN' && opp.percentage) ? `${opp.percentage}%` : '',
+                "Nombre de la cuenta": opp.account_name || '',
+                "Nombre de la oportunidad": opp.name || '',
+                "Observaciones": opp.last_observation || '',
+                "Infraestructura": oppChar?.infra_name || '',
+                "Define Infra": oppChar?.defined_by || '',
+                "Metodología de trabajo": oppChar?.methodology_name || ''
+            };
+
+            if (oppTeams.length === 0) {
+                teamSheetData.push({
+                    ...baseData,
+                    "Rol": '', "Rol Nvo": '', "Seniority": '', "Tecnología Ppal": '',
+                    "Cantidad": '', "Asignación": '', "Stack Tecnológico": ''
+                });
+            } else {
+                oppTeams.forEach((member: any) => {
+                    teamSheetData.push({
+                        ...baseData,
+                        "Rol": member.role_name || '',
+                        "Rol Nvo": member.role_name || '',
+                        "Seniority": member.seniority_name || '',
+                        "Tecnología Ppal": member.main_technology_name || '',
+                        "Cantidad": member.quantity,
+                        "Asignación": member.assignment,
+                        "Stack Tecnológico": member.stack_technologies || ''
+                    });
+                });
+            }
+
+            if (rowCount > 1) {
+                // Merge grouped columns: ID(0), %(1), Account(2), Opp(3), Obs(4), Infra(12), Define(13), Meth(14)
+                [0, 1, 2, 3, 4, 12, 13, 14].forEach(colIndex => {
+                    merges.push({ s: { r: currentRow, c: colIndex }, e: { r: currentRow + rowCount - 1, c: colIndex } });
+                });
+            }
+            
+            currentRow += rowCount;
+        });
+
+        const wsTeam = XLSX.utils.json_to_sheet(teamSheetData, { header: teamHeaders });
+        wsTeam['!merges'] = merges;
+        
+        // Styling for Team Sheet
+        wsTeam['!cols'] = [
+            { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 30 }, { wch: 40 },
+            { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 30 },
+            { wch: 20 }, { wch: 20 }, { wch: 20 }
+        ];
+
+        // Apply styles to Team Sheet
+        const teamRange = XLSX.utils.decode_range(wsTeam['!ref'] || 'A1:A1');
+        const oppColorMap = new Map<number, string>();
+        filteredForPablo.forEach(opp => {
+             oppColorMap.set(opp.id, getHexColor(opp.color_code));
+        });
+
+        for (let R = teamRange.s.r; R <= teamRange.e.r; ++R) {
+            for (let C = teamRange.s.c; C <= teamRange.e.c; ++C) {
+                const cellRef = XLSX.utils.encode_cell({c: C, r: R});
+                if (!wsTeam[cellRef]) wsTeam[cellRef] = { t: 's', v: '' };
+                
+                if (R === 0) {
+                    wsTeam[cellRef].s = headerStyle;
+                } else {
+                    wsTeam[cellRef].s = { ...baseCellStyle };
+                    
+                    // Columns to color: ID(0), %(1), Account(2), Opp(3), Obs(4)
+                    if ([0, 1, 2, 3, 4].includes(C)) {
+                        const rowData = teamSheetData[R - 1];
+                        if (rowData) {
+                            const colorHex = oppColorMap.get(rowData["ID"]);
+                            if (colorHex) {
+                                wsTeam[cellRef].s.fill = { fgColor: { rgb: colorHex } };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Pablo Export");
+        XLSX.utils.book_append_sheet(wb, wsTeam, "Team & Arq");
         XLSX.writeFile(wb, `export_DC_${getDownloadDateSuffix()}.xlsx`);
       };    
   
