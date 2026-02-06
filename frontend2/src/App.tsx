@@ -307,10 +307,23 @@ function App() {
         return `_${dd}${mm}${yyyy}`;
     };
 
+    const toExcelDate = (dateString?: string) => {
+        if (!dateString) return '';
+        const datePart = dateString.split('T')[0];
+        const parts = datePart.split('-');
+        if (parts.length !== 3) return null;
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        // Seteamos a las 12:00 para evitar saltos de día por zona horaria
+        return new Date(year, month, day, 12, 0, 0);
+    };
+
     const exportDC = () => {
         const headers = [
             "ID", "%", "Gerente Comercial", "Observaciones", 
             "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", 
+            "Horas", "Meses",
             "Entregar al Gerente Comercial", "Motivo"
         ];
     
@@ -324,12 +337,14 @@ function App() {
                 "Nombre de la cuenta": opp.account_name,
                 "Nombre de la oportunidad": opp.name,
                 "Estado": opp.status_name,
-                "Entregar al Gerente Comercial": opp.real_delivery_date ? formatDate(opp.real_delivery_date) : '',
+                "Horas": opp.estimated_hours,
+                "Meses": opp.estimated_term_months,
+                "Entregar al Gerente Comercial": toExcelDate(opp.real_delivery_date),
                 "Motivo": motive ? motive.name : '',
             };
         });
     
-        const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+        const ws = XLSX.utils.json_to_sheet(data, { header: headers, cellDates: true });
     
         const getHexColor = (colorCode?: string) => {
             switch (colorCode) {
@@ -341,19 +356,25 @@ function App() {
         };
     
         const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        const borderStyle = { style: "thin", color: { rgb: "000000" } };
         const headerStyle = {
             fill: { fgColor: { rgb: "FFFFE0B2" } },
             font: { bold: true, sz: 10 },
             alignment: { horizontal: "center", vertical: "center", wrapText: true },
-            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
         };
     
         const baseCellStyle = {
             font: { sz: 10 },
             alignment: { vertical: "center", wrapText: true },
-            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
         };
         
+        // Aseguramos que el rango cubra todas las columnas de headers
+        range.s.c = 0;
+        range.e.c = Math.max(range.e.c, headers.length - 1);
+        ws['!ref'] = XLSX.utils.encode_range(range);
+
         for (let R = range.s.r; R <= range.e.r; ++R) {
             if (R === 0) {
                 for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -364,10 +385,8 @@ function App() {
                 continue; 
             }
             
-            const rowData = filteredOpps[R - 1]; 
-            if (!rowData) continue;
-    
-            const colorHex = getHexColor(rowData.color_code);
+            const rowData = filteredOpps[R - 1];
+            const colorHex = rowData ? getHexColor(rowData.color_code) : 'FFFFFFFF';
             const colsToColor = [2, 3, 4];
     
             for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -376,15 +395,28 @@ function App() {
                 
                 ws[cellRef].s = { ...baseCellStyle };
     
-                if (colsToColor.includes(C)) {
+                if (ws[cellRef].t === 'd') {
+                    ws[cellRef].z = 'dd/mm/yyyy';
+                }
+
+                if (ws[cellRef].t === 'n') {
+                    if (C === 7) ws[cellRef].z = '0';
+                    if (C === 8) ws[cellRef].z = '0.00';
+                }
+
+                if (colsToColor.includes(C) && rowData) {
                      ws[cellRef].s.fill = { fgColor: { rgb: colorHex } };
                 }
             }
         }
 
-        ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+        ws['!cols'] = [
+            { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, 
+            { wch: 40 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, 
+            { wch: 20 }
+        ];
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "DC Export");
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
         XLSX.writeFile(wb, `export_dir_${getDownloadDateSuffix()}.xlsx`);
       };    
 
@@ -403,28 +435,34 @@ function App() {
         const filteredForPablo = filteredOpps.filter(opp => 
             opp.color_code === 'GREEN' || opp.color_code === 'YELLOW'
         );
-        const headers = ["ID", "%", "Gerente Comercial", "Observaciones", "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", "Entregar al Gerente Comercial", "Motivo"];
+        const headers = ["ID", "%", "Gerente Comercial", "Observaciones", "Nombre de la cuenta", "Nombre de la oportunidad", "Estado", "Horas", "Meses", "Entregar al Gerente Comercial", "Motivo"];
         const data = filteredForPablo.map(opp => {
             const motive = motives.find(m => m.id === opp.motive_id);
             return {
                 "ID": opp.id, "%": (opp.color_code === 'GREEN' && opp.percentage) ? `${opp.percentage} %` : '', "Gerente Comercial": opp.manager_name, "Observaciones": opp.last_observation,
                 "Nombre de la cuenta": opp.account_name, "Nombre de la oportunidad": opp.name, "Estado": opp.status_name,
-                "Entregar al Gerente Comercial": opp.real_delivery_date ? formatDate(opp.real_delivery_date) : '', "Motivo": motive ? motive.name : '',
+                "Horas": opp.estimated_hours,
+                "Meses": opp.estimated_term_months,
+                "Entregar al Gerente Comercial": toExcelDate(opp.real_delivery_date), "Motivo": motive ? motive.name : '',
             };
         });
-        const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+        const ws = XLSX.utils.json_to_sheet(data, { header: headers, cellDates: true });
         const getHexColor = (colorCode?: string) => {
             switch (colorCode) { case 'YELLOW': return 'FFFFFF00'; case 'GREEN': return 'FF00FF00'; default: return 'FFFFFFFF'; }
         };
         const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        const borderStyle = { style: "thin", color: { rgb: "000000" } };
         const headerStyle = {
             fill: { fgColor: { rgb: "FFFFE0B2" } }, font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center", wrapText: true },
-            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
         };
         const baseCellStyle = {
             font: { sz: 10 }, alignment: { vertical: "center", wrapText: true },
-            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
         };
+        range.s.c = 0;
+        range.e.c = Math.max(range.e.c, headers.length - 1);
+        ws['!ref'] = XLSX.utils.encode_range(range);
         for (let R = range.s.r; R <= range.e.r; ++R) {
             if (R === 0) {
                 for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -434,14 +472,21 @@ function App() {
                 }
                 continue; 
             }
-            const rowData = filteredForPablo[R - 1]; if (!rowData) continue;
-            const colorHex = getHexColor(rowData.color_code);
+            const rowData = filteredForPablo[R - 1];
+            const colorHex = rowData ? getHexColor(rowData.color_code) : 'FFFFFFFF';
             const colsToColor = [2, 3, 4];
             for (let C = range.s.c; C <= range.e.c; ++C) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
                 if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
                 ws[cellRef].s = { ...baseCellStyle };
-                if (colsToColor.includes(C)) { ws[cellRef].s.fill = { fgColor: { rgb: colorHex } }; }
+                if (ws[cellRef].t === 'd') {
+                    ws[cellRef].z = 'dd/mm/yyyy';
+                }
+                if (ws[cellRef].t === 'n') {
+                    if (C === 7) ws[cellRef].z = '0';
+                    if (C === 8) ws[cellRef].z = '0.00';
+                }
+                if (colsToColor.includes(C) && rowData) { ws[cellRef].s.fill = { fgColor: { rgb: colorHex } }; }
             }
         }
 
@@ -516,6 +561,9 @@ function App() {
 
         // Apply styles to Team Sheet
         const teamRange = XLSX.utils.decode_range(wsTeam['!ref'] || 'A1:A1');
+        teamRange.s.c = 0;
+        teamRange.e.c = teamHeaders.length - 1;
+        wsTeam['!ref'] = XLSX.utils.encode_range(teamRange);
         const oppColorMap = new Map<number, string>();
         filteredForPablo.forEach(opp => {
              oppColorMap.set(opp.id, getHexColor(opp.color_code));
@@ -545,7 +593,11 @@ function App() {
             }
         }
 
-        ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+        ws['!cols'] = [
+            { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 40 }, { wch: 25 }, 
+            { wch: 40 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, 
+            { wch: 20 }
+        ];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Pablo Export");
         XLSX.utils.book_append_sheet(wb, wsTeam, "Team & Arq");
@@ -562,7 +614,8 @@ function App() {
             "Fecha-Entendimiento (Primer reunión con Preventa)", "Fecha-Alcance (Cierre del alcance)",
             "Fecha-COE (Aprobacion Coe)", "Fecha-Entrega (Fecha envío PP al comercial)", 
             "Dias Inicio(Fecha-Inicio y Fecha-Entendimiento)", "Dias Entendimiento(Fecha-Entendimiento y Fecha-alcance)",
-            "Dias Elaboración(Fecha-alcance y Fecha-Entrega)"
+            "Dias Elaboración(Fecha-alcance y Fecha-Entrega)",
+            "Categoria según horas"
         ];
 
         const diffDays = (date1?: string, date2?: string) => {
@@ -587,6 +640,14 @@ function App() {
         
         const toSiNo = (value?: boolean) => value ? 'SI' : 'NO';
 
+        const getCategoryByHours = (hours?: number) => {
+            if (hours === undefined || hours === null) return '';
+            if (hours <= 1000) return 'S';
+            if (hours <= 5000) return 'M';
+            if (hours <= 10000) return 'L';
+            return 'XL';
+        };
+
         const data = allOpps.map(opp => ({
             "ID": opp.id,
             "%": (opp.color_code === 'GREEN' && opp.percentage) ? `${opp.percentage}%` : '',
@@ -606,41 +667,47 @@ function App() {
             "Aprobador": opp.dc_name || '',
             "Resp Neg": opp.neg_name || '',
             "Resp Tecnico": opp.tec_name || '',
-            "Horas": opp.estimated_hours || '',
-            "Plazo": opp.estimated_term_months || '',
-            "Fecha-Inicio (Comercial pasa a preventa)": formatDate(opp.start_date),
-            "Fecha-Entendimiento (Primer reunión con Preventa)": formatDate(opp.understanding_date),
-            "Fecha-Alcance (Cierre del alcance)": formatDate(opp.scope_date),
-            "Fecha-COE (Aprobacion Coe)": formatDate(opp.coe_date),
-            "Fecha-Entrega (Fecha envío PP al comercial)": formatDate(opp.real_delivery_date),
+            "Horas": opp.estimated_hours,
+            "Plazo": opp.estimated_term_months,
+            "Fecha-Inicio (Comercial pasa a preventa)": toExcelDate(opp.start_date),
+            "Fecha-Entendimiento (Primer reunión con Preventa)": toExcelDate(opp.understanding_date),
+            "Fecha-Alcance (Cierre del alcance)": toExcelDate(opp.scope_date),
+            "Fecha-COE (Aprobacion Coe)": toExcelDate(opp.coe_date),
+            "Fecha-Entrega (Fecha envío PP al comercial)": toExcelDate(opp.real_delivery_date),
             "Dias Inicio(Fecha-Inicio y Fecha-Entendimiento)": diffDays(opp.start_date, opp.understanding_date),
             "Dias Entendimiento(Fecha-Entendimiento y Fecha-alcance)": diffDays(opp.understanding_date, opp.scope_date),
-            "Dias Elaboración(Fecha-alcance y Fecha-Entrega)": diffDays(opp.scope_date, opp.real_delivery_date)
+            "Dias Elaboración(Fecha-alcance y Fecha-Entrega)": diffDays(opp.scope_date, opp.real_delivery_date),
+            "Categoria según horas": getCategoryByHours(opp.estimated_hours)
         }));
 
-        const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+        const ws = XLSX.utils.json_to_sheet(data, { header: headers, cellDates: true });
 
         ws['!cols'] = [
             { wch: 5 }, { wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 40 },
             { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 10 },
             { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 },
             { wch: 8 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
-            { wch: 18 }, { wch: 15 }, { wch: 15 }
+            { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
         ];
 
+        const borderStyle = { style: "thin", color: { rgb: "000000" } };
         const headerStyle = {
             fill: { fgColor: { rgb: "B0E0E6" } },
             font: { bold: true, sz: 10 },
             alignment: { horizontal: "center", vertical: "center", wrapText: true },
-            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
         };
         const baseCellStyle = {
             font: { sz: 10 },
             alignment: { vertical: "center", wrapText: true },
-            border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            border: { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle }
         };
 
         const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        range.s.c = 0;
+        range.e.c = Math.max(range.e.c, headers.length - 1);
+        ws['!ref'] = XLSX.utils.encode_range(range);
+
         for (let R = range.s.r; R <= range.e.r; ++R) {
             for (let C = range.s.c; C <= range.e.c; ++C) {
                 const cellRef = XLSX.utils.encode_cell({c: C, r: R});
@@ -650,12 +717,19 @@ function App() {
                     ws[cellRef].s = headerStyle;
                 } else {
                     ws[cellRef].s = { ...baseCellStyle };
+                    if (ws[cellRef].t === 'd') {
+                        ws[cellRef].z = 'dd/mm/yyyy';
+                    }
+                    if (ws[cellRef].t === 'n') {
+                        if (C === 18) ws[cellRef].z = '0';
+                        if (C === 19) ws[cellRef].z = '0.00';
+                    }
                 }
             }
         }
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "JP Report");
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
         XLSX.writeFile(wb, `report_all_${getDownloadDateSuffix()}.xlsx`);
       };  
 
