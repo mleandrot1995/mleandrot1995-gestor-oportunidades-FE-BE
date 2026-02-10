@@ -852,7 +852,7 @@ function App() {
                 onSave={handleSave}
                 initialData={editingOpp}
                 isNew={isNewRecord}
-                isReadOnly={activeTab !== 'ON'}
+                isReadOnly={activeTab === 'TRASH'}
                 accounts={accounts}
                 teams={employees}
                 statuses={statuses}

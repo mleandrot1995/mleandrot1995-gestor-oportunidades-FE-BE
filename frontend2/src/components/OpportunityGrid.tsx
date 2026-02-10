@@ -59,7 +59,7 @@ const OpportunityGrid: React.FC<Props> = ({
     isHistoryView, isTrashView, accounts, employees, statuses, motives, searchElement
 }) => {
     
-    const isReadOnlyView = isHistoryView || isTrashView;
+    const isReadOnlyView = isTrashView;
     const [focusedDate, setFocusedDate] = useState<string | null>(null);
     const [minimizedCols, setMinimizedCols] = useState<Set<string>>(new Set());
     const [showToggles, setShowToggles] = useState(false);
@@ -702,8 +702,8 @@ const OpportunityGrid: React.FC<Props> = ({
                                                 <button onClick={() => onUnarchive(opp)} className={`${actionBtnClass} text-blue-600 hover:bg-blue-50 shadow-sm border border-blue-100`}>
                                                     <RotateCcw size={14}/> <span>Activar</span>
                                                 </button>
-                                                <button onClick={() => onOpenDetail(opp)} className={`${actionBtnClass} text-blue-700 hover:bg-blue-50 shadow-sm border border-blue-100`}>
-                                                    <Search size={14}/> <span>Ver Detalle</span>
+                                                <button onClick={() => onOpenDetail(opp)} className={`${actionBtnClass} text-blue-600 hover:bg-blue-50 shadow-sm border border-blue-100`}>
+                                                    <Edit2 size={14}/> <span>Editar</span>
                                                 </button>
                                                 <button onClick={() => onDelete(opp.id)} className={`${actionBtnClass} text-red-600 hover:bg-red-50 shadow-sm border border-red-100`}>
                                                     <Trash2 size={14}/> <span>Borrar</span>
