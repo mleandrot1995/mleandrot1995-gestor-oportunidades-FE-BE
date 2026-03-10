@@ -257,8 +257,8 @@ function App() {
                 if (aStatusIdx !== bStatusIdx) {
                     return aStatusIdx - bStatusIdx;
                 } else {
-                    const aDate = a.delivery_date;
-                    const bDate = b.delivery_date;
+                    const aDate = a.real_delivery_date;
+                    const bDate = b.real_delivery_date;
                     if (!aDate && bDate) return -1;
                     if (aDate && !bDate) return 1;
                     if (aDate && bDate) {
